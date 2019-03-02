@@ -1,0 +1,14 @@
+#
+# ParaFEM pf2ensi generated post-process file
+# Ensight Gold Format
+#
+# Problem name:	xx23
+#
+FORMAT
+type:	ensight gold
+GEOMETRY
+model:	1	xx23.ensi.geo
+VARIABLE
+scalar per node:		Bound_Nodes	xx23.ensi.NDBND
+vector per node:		Loaded_Nodes	xx23.ensi.NDLDS
+scalar per element:		Material	xx23.ensi.MATID

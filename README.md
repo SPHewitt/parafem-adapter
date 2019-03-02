@@ -5,5 +5,5 @@ parafem preCICE adapter
 An adapter for the preCICE libraries
 
 ## Running
-./main precice-config.xml SolverOne MeshOne
+./main precice-config.xml SolverOne MeshOne 
 ./main precice-config.xml SolverTwo MeshTwo

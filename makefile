@@ -23,7 +23,7 @@ PARAFEMROOT=/home/mclsssh5/paraFem/parafem
 PARAFEMLIB=$(PARAFEMROOT)/lib
 PARAFEMMOD=$(PARAFEMROOT)/include/mpi
 
-EXE=main
+EXE=parafem
 
 SRC= \
 	$(SRCDIR)/SolverInterfaceF2003.f90 \
@@ -42,7 +42,7 @@ all:
 
 $(EXE): $(OBJ)
 	@echo Compiling main
-	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) $(EXE).f90 -o $@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
+	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) $(EXE).f90 -o $(BINDIR)/$@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
 
 #$(OBJ): $(SRC)
 #	@echo Compiling Fortran Bindings
@@ -56,3 +56,4 @@ clean:
 	@echo cleaning
 	rm -rf obj/*.o
 	rm -rf main
+	rm -rf *.log

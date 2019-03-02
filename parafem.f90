@@ -23,6 +23,9 @@ PROGRAM main
   commsize = 1
   CALL precicef_create(participantName, config, rank, commsize)
 
+  ! TODO:
+  ! Allocate parafem mesh boundary
+  
   ! Allocate dummy mesh with only one vertex 
   CALL precicef_get_dims(dimensions)
   ALLOCATE(vertex(dimensions))
@@ -44,6 +47,7 @@ PROGRAM main
   
     CALL precicef_action_required(writeItCheckp, bool)
     IF (bool.EQ.1) THEN
+      CALL dummy()
       WRITE (*,*) 'DUMMY: Writing iteration checkpoint'
       CALL precicef_fulfilled_action(writeItCheckp)
     ENDIF
