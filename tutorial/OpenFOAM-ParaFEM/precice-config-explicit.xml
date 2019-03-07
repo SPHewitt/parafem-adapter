@@ -43,28 +43,14 @@
 
     <m2n:sockets from="Fluid" to="ParaFEM" distribution-type="gather-scatter"/>
 
-    <coupling-scheme:serial-implicit>
+    <coupling-scheme:serial-explicit>
             <timestep-length value="0.001" />
             <max-time value="10"/>
             <participants first="Fluid" second="ParaFEM"/>
             <exchange data="Forces0" mesh="ParaFEM_Mesh" from="Fluid" to="ParaFEM"/>
             <exchange data="Displacements0" mesh="ParaFEM_Mesh" from="ParaFEM" to="Fluid" initialize="0" />
 
-            <max-iterations value="50"/>
-            <relative-convergence-measure limit="1e-4" data="Displacements0" mesh="ParaFEM_Mesh"/>
-            <relative-convergence-measure limit="1e-4" data="Forces0" mesh="ParaFEM_Mesh"/>
-            <extrapolation-order value="2"/>
-
-             <post-processing:IQN-ILS>
-                <data name="Displacements0" mesh="ParaFEM_Mesh"/>
-                <preconditioner type="residual-sum"/>
-                <filter type="QR1" limit="1e-6"/>
-                <initial-relaxation value="0.1"/> 
-                <max-used-iterations value="50"/>
-                <timesteps-reused value="10"/> 
-            </post-processing:IQN-ILS> 
-
-    </coupling-scheme:serial-implicit>
+    </coupling-scheme:serial-explicit>
 
 
     </solver-interface>

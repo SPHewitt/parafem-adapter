@@ -27,10 +27,10 @@ else
     ln -s -f precice-config_serial.xml precice-config.xml
 fi
 
-rm -rfv Fluid/0/
-cp -r Fluid/0.orig/ Fluid/0/
-blockMesh -case Fluid
-checkMesh -case Fluid
+#rm -rfv Fluid/0/
+#cp -r Fluid/0.orig/ Fluid/0/
+#blockMesh -case Fluid
+#checkMesh -case Fluid
 
 # Run
 cd Fluid
@@ -45,4 +45,4 @@ else
 fi
 
 # Workaround for issue #26
-./removeObsoleteFolders.sh
+#./removeObsoleteFolders.sh

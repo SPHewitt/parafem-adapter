@@ -146,7 +146,7 @@ vertices
 // level 2 - 0.11
 // level 3 - 0.1
 // level 4 - 0.088
- cs 0.11;
+ cs 0.25;
 
 // Set variable for height above flap
  top #calc "$H-$h";

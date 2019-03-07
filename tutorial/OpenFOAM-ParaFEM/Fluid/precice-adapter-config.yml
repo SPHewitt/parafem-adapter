@@ -6,12 +6,12 @@ interfaces:
 - mesh: Fluid-Mesh-Faces
   locations: faceCenters
   patches:
-  - flap
+  - interface
   write-data: Forces0
 - mesh: Fluid-Mesh-Nodes
   locations: faceNodes
   patches:
-  - flap
+  - interface
   read-data: Displacements0
 
 FSIenabled: true

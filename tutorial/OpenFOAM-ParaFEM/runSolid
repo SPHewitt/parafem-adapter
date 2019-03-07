@@ -12,9 +12,9 @@ echo "Preparing and running the Solid participant..."
 echo "Note: run the script runFluid first. It sets up a link to the correct precice-config.xml file."
 
 # Prepare in silent mode
-cd Solid
-    cgx -bg pre_flap.fbd
-cd -
+#cd Solid
+#    ./makeMesh.sh 
+#cd -
 
 # Run
-ccx_preCICE -i Solid/flap -precice-participant Calculix
+../../bin/parafem Solid/xx23 precice-config.xml ParaFEM ParaFEM_Mesh

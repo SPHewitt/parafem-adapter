@@ -57,3 +57,5 @@ clean:
 	rm -rf obj/*.o
 	rm -rf main
 	rm -rf *.log
+run:
+	./bin/parafem precice-config.xml SolverTwo MeshTwo 
