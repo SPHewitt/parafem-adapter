@@ -11,10 +11,14 @@ PROGRAM main
   !----------------------------------------------------------------------
   ! PRECICE VARIABLES
   !----------------------------------------------------------------------
-  CHARACTER*50                    :: config, participantName, meshName, writeInitialData, readItCheckp, writeItCheckp
-  INTEGER                         :: rank, commsize, ongoing, dimensions, meshID, vertexID, bool, vertexSize
-  REAL                            :: dtlimit
-  REAL, DIMENSION(:), ALLOCATABLE :: vertex
+  CHARACTER*50                    :: config, participantName, meshName
+  CHARACTER*50                    :: writeInitialData, readItCheckp
+  CHARACTER*50                    :: writeItCheckp, dataName
+  INTEGER                         :: rank, commsize, ongoing, dimensions
+  INTEGER                         :: meshID, vertexID, bool, vertexSize
+  INTEGER                         :: displID,forceID,hasData
+  REAL(iwp)                       :: dtlimit,dt
+  REAL(iwp), DIMENSION(:), ALLOCATABLE :: vertex,forces,displacements,nodes
 
   !----------------------------------------------------------------------
   ! PARAFEM VARIABLES
@@ -26,10 +30,13 @@ PROGRAM main
   INTEGER                  :: iel,nip,npes_pp,partitioner,ndof
   INTEGER                  :: i,j,k,limit,loaded_nodes,meshgen
   INTEGER                  :: ndim,nels,nn,nod,nodof,npri,nr,nres
-  INTEGER                  :: nstep,nlen
+  INTEGER                  :: nstep,nlen,flag
 
   INTEGER,ALLOCATABLE      :: g_g_pp(:,:), rest(:,:),g_num_pp(:,:)
+
   REAL(iwp),ALLOCATABLE    :: g_coord_pp(:,:,:)
+
+  REAL(iwp)                :: mat_prop(3),num_var(5)
 
   CHARACTER(LEN=50)        :: argv,fname
   CHARACTER(LEN=15)        :: element
@@ -50,16 +57,16 @@ PROGRAM main
   CALL getarg(4, meshName)
 
 
-  print*, config,participantName, meshName
-  rank = 0
-  commsize = 1
+  CALL find_pe_procs(numpe,npes); CALL getname(argv,nlen)
+
+  rank = numpe-1
+  commsize = npes
+
   CALL precicef_create(participantName, config, rank, commsize)
 
   !----------------------------------------------------------------------
   ! !. PARAFEM Input and Initialisation
   !----------------------------------------------------------------------
-
-  CALL find_pe_procs(numpe,npes); CALL getname(argv,nlen)
 
   CALL read_p129(argv,numpe,alpha1,beta1,e,element,limit,loaded_nodes,&
                  meshgen,nels,nip,nn,nod,npri,nr,nres,nstep,omega,    &
@@ -121,44 +128,71 @@ PROGRAM main
   ! Read in wetted surface, (xx23.lds)
   fname = argv(1:INDEX(argv," ")-1) // ".lds"
   vertexSize = loaded_nodes
-  ALLOCATE(vertex(dimensions))
+
+  ALLOCATE(vertex(dimensions),nodes(vertexSize))
+
   CALL precicef_get_mesh_id(meshName, meshID)
+
   OPEN(1,file=fname)
   DO i=1,vertexSize
     READ(1,*) vertexID, vertex(1), vertex(2), vertex(3)
+    nodes(i)=vertexID
     CALL precicef_set_vertex(meshID, vertex, vertexID)
   ENDDO
   CLOSE(1)
   DEALLOCATE(vertex)
+  ALLOCATE(forces(vertexSize*dimensions),displacements(vertexSize*dimensions))
+
+  displID=0
+  forceID=0
+
+  !dataName='Displacements0'
+  !print*,dataName
+  
+  !CALL precicef_get_data_id(dataName,meshID,displID,50)
+
+  dataName='Forces'
+  print*,dataName
+ CALL precicef_has_data(dataName, hasData, 50, meshID)
+ print*,"HELL"
+ CALL precicef_get_data_id(dataName,meshID,forceID,7)
+
+  forces=0.0
+  displacements=0.0
 
   CALL precicef_initialize(dtlimit)
 
-  CALL precicef_action_required(writeInitialData, bool)
-  IF (bool.EQ.1) THEN
-    WRITE (*,*) 'ParaFEM: Writing initial data'
-  ENDIF
   CALL precicef_initialize_data()
 
   CALL precicef_ongoing(ongoing)
-  DO WHILE (ongoing.NE.0)
+  !! HARDCODED properties for the sake of quick and easy test Case
+  num_var(1)=alpha1
+  num_var(2)=beta1
+  num_var(3)=theta
+  num_var(4)=tol
+  num_var(5)=limit
 
-    CALL precicef_action_required(writeItCheckp, bool)
-    IF (bool.EQ.1) THEN
-      CALL dummy()
-      WRITE (*,*) 'ParaFEM: Writing iteration checkpoint'
-      CALL precicef_fulfilled_action(writeItCheckp)
-    ENDIF
+  mat_prop(1)=e
+  mat_prop(2)=v
+  mat_prop(3)=rho
+
+  dt = 0.001
+
+    print*,"JHELLLo"
+  !----------------------------------------------------------------------
+  ! Time Loop
+  !----------------------------------------------------------------------
+  DO WHILE (ongoing.NE.0)
+    CALL precicef_read_bvdata(forceID,vertexSize,nodes,forces)
+
+    CALL runl(nodes,displacements,num_var,mat_prop,nr,loaded_nodes,dt, &
+               g_g_pp,g_num_pp,g_coord_pp,flag)
+
+    CALL precicef_write_bvdata(displID,vertexSize,nodes,displacements)
 
     CALL precicef_advance(dtlimit)
     CALL precicef_ongoing(ongoing)
 
-    CALL precicef_action_required(readItCheckp, bool)
-    IF (bool.EQ.1) THEN
-      WRITE (*,*) 'ParaFEM: Reading iteration checkpoint'
-      CALL precicef_fulfilled_action(readItCheckp)
-    ELSE
-      WRITE (*,*) 'ParaFEM: Advancing in time'
-    ENDIF
 
   ENDDO
 
