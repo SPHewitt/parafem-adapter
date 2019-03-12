@@ -51,7 +51,7 @@ $(EXE): $(OBJ)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	@echo Compiling "$@"
-	$(FC) $(CFLAGS) -I$(PARAFEMMOD) -o $@ -c $< -J$(MODDIR) -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
+	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -o $@ -c $< -J$(MODDIR) -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
 
 clean:
 	@echo cleaning

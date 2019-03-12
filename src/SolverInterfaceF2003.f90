@@ -183,6 +183,16 @@ module PreCICE_solver_if_module
       real(kind=c_double) :: dataValue(*)
     end subroutine precicef_read_vdata
 
+!    subroutine precicef_read_bvdata( dataID, blockSize,valueIndices, values) &
+!      &  bind(c, name='precicef_read_bvdata_')
+!
+!      use, intrinsic :: iso_c_binding
+!      integer(kind=c_int) :: dataID
+!      integer(kind=c_int) :: blockSize
+!      integer(kind=c_int) :: valueIndices(*)
+!      real(kind=c_double) :: values(*)
+!    end subroutine precicef_read_bvdata
+    
     subroutine precicef_write_sdata( dataID, valueIndex, dataValue) &
       &  bind(c, name='precicef_write_sdata_')
 

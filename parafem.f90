@@ -207,7 +207,8 @@ PROGRAM main
     !           g_g_pp,g_num_pp,g_coord_pp,flag,displacements)
     
     CALL runnl(nodes,forces,num_var,mat_prop,nr,loaded_nodes,dt, &
-               g_g_pp,g_num_pp,g_coord_pp,bool,displacements)
+               g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn)
+               
 
     CALL precicef_write_bvdata(displID,vertexSize,vertexIDs,displacements)
 

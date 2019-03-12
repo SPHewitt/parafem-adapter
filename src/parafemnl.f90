@@ -1,5 +1,5 @@
 SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
-                  g_g_pp,g_num_pp,g_coord_pp,flag,disp)
+                  g_g_pp,g_num_pp,g_coord_pp,flag,disp,nn)
   !/****f* parafeml/runl
   !*  NAME
   !*    SUBROUTINE: runl
@@ -64,22 +64,23 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   INTEGER,PARAMETER         :: nodof=3,ndim=3,nst=6,nod=8
   REAL(iwp),PARAMETER       :: zero=0.0_iwp,one=1.0_iwp
 
-  INTEGER,INTENT(IN)        :: loaded_nodes,nr
+  INTEGER,INTENT(IN)        :: loaded_nodes,nr,nn
 
   INTEGER,INTENT(INOUT)     :: g_g_pp(ntot,nels_pp)
   INTEGER,INTENT(INOUT)     :: g_num_pp(nod,nels_pp),node(loaded_nodes)
 
 
   INTEGER                   :: printres
-  INTEGER                   :: nels,nn,nip,nlen
+  INTEGER                   :: nels,nip,nlen
   INTEGER                   :: nf_start, fmt=1, i, j, k, m, l
   INTEGER                   :: iters, limit, iel
   INTEGER                   :: num_load_steps, iload, igauss
   INTEGER                   :: dimH, inewton, jump, npes_pp
-  INTEGER                   :: partitioner=1
+  INTEGER                   :: partitioner=1,npri
   INTEGER                   :: nodes_pp, node_start
   INTEGER                   :: node_end, idx1, idx2
-  INTEGER                   :: break, nodeID, flag,real_time
+  INTEGER                   :: break, nodeID, flag
+  INTEGER,SAVE              :: real_time
 
   REAL(iwp),INTENT(IN)      :: num_var(7),mat_prop(3),timeStep
   REAL(iwp),INTENT(IN)      :: g_coord_pp(nod,ndim,nels_pp)
@@ -171,8 +172,8 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   ! Set Numerical and Material Values 
   beta   =  0.25!num_var(1)    ! Beta  (Typically = 0.25)
   delta  =  0.5!num_var(2)    ! Delta (Typically = 0.5)
-  ray_a  =  0.0!num_var(3)    ! Damping parameter A
-  ray_b  =  0.0!num_var(4)    ! Damping parameter B
+  ray_a  =  0.001!num_var(3)    ! Damping parameter A
+  ray_b  =  0.001!num_var(4)    ! Damping parameter B
   tol    =  1e-6!num_var(5)    ! Tolerance of PCG loop
   limit  =  500!num_var(6)    ! Max number of Interation in PCG
   tol2   =  1e-5!num_var(7)    ! Tolerance for Newton-Raphson loop
@@ -274,8 +275,6 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
     ALLOCATE(deeF(nst,nst))
     ALLOCATE(geomH(dimH,dimH))
     ALLOCATE(points(ndim,nip))
-    ALLOCATE(temp(nodes_pp))
-    ALLOCATE(disp_pp(nodes_pp))
     !ALLOCATE(Dfield(ntot,nels_pp))
     !ALLOCATE(Ufield(ntot,nels_pp))
     !ALLOCATE(Afield(ntot,nels_pp))
@@ -318,14 +317,15 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
     ! IF flag == 1 - new time step
     ! In this case store the conditions at this point
     If (flag == 1) THEN
-      PRINT*,"Advanced in time:"
-      x0_pp_old    =  x0_pp
-      d1x0_pp_old =  d1x0_pp
-      d2x0_pp_old  =  d2x0_pp
+      PRINT*,"Storing data at t(n-1):"
+      x0_pp_old(1:)    =  x0_pp(1:)
+      d1x0_pp_old(1:) =  d1x0_pp(1:)
+      d2x0_pp_old(1:)  =  d2x0_pp(1:)
     ELSE
-      x0_pp    =  x0_pp_old
-      d1x0_pp =  d1x0_pp_old;
-      d2x0_pp  =  d2x0_pp_old;
+      ! Initial conditions from previous dt
+      x0_pp(1:)    =  x0_pp_old(1:)
+      d1x0_pp(1:) =  d1x0_pp_old(1:)
+      d2x0_pp(1:)  =  d2x0_pp_old(1:)
     ENDIF
     
   !---- Clean Arrays ------
@@ -496,7 +496,6 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 !-------------------------------------------------------------------------
  
     ! New mark parameters
-    ! Damping excluded
     ! Finite element procedures in engineering analysis, K‐J. Bathe, Prentice‐Hall, 1982, doi:10.1002/nag.1610070412
     ! Pages 511-513
 
@@ -505,8 +504,8 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
      a2  = 1.0/(beta*dtim)
      a3  = (1.0/( 2.0*beta)) -1.0
      a4  = (delta/beta) - 1.0
-     a5  = (dtim/2)*((delta/beta)-2.0)
-     a6  = dtim*(1-delta)
+     a5  = (dtim/2.0)*((delta/beta)-2.0)
+     a6  = dtim*(1.0-delta)
      a7  = delta*dtim
 
      ! M_eff
@@ -696,8 +695,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
         ENDIF
       ENDDO    
     ENDDO
-  ENDDO
-  
+  ENDDO 
 
   ! Velocity
   !eld_pp   =  zero
@@ -709,10 +707,20 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   !eld_pp   =  zero
   !CALL gather(d2x1_pp(1:),eld_pp)
   !Afield=eld_pp
-  CALL calc_nodes_pp(nn,npes,numpe,node_end,node_start,nodes_pp)
-  ! Write Data to ensi file
   IF(flag==1)THEN
-       
+    CALL calc_nodes_pp(nn,npes,numpe,node_end,node_start,nodes_pp)
+    real_time = real_time + 1
+  ENDIF
+  
+  IF(.NOT.ALLOCATED(temp))THEN
+    ALLOCATE(temp(nodes_pp))
+    ALLOCATE(disp_pp(nodes_pp*ndim))
+  ENDIF
+   
+  npri=20
+  ! Write Data to ensi file
+  IF( (flag==1) .AND. (real_time/npri*npri==real_time))THEN
+  !IF(.false.)THEN
        WRITE(ch,'(I6.6)') real_time
        OPEN(12,file=argv(1:nlen)//".ensi.DISPL-"//ch,status='replace',   &
             action='write'); WRITE(12,'(A)')                             &
@@ -720,17 +728,16 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
        WRITE(12,'(A/A/A)') "part", "     1","coordinates"
        eld_pp   =  zero
      CALL gather(x1_pp(1:),eld_pp); disp_pp=zero
-     PRINT*,nodes_pp
      CALL scatter_nodes(npes,nn,nels_pp,g_num_pp,nod,ndim,nodes_pp,        &
                          node_start,node_end,eld_pp,disp_pp,1)
-     PRINT*,nodes_pp,node_start,node_end
      DO i=1,ndim ; temp=zero
        DO l=1,nodes_pp
          k=i+(ndim*(l-1))
-         temp(l)=disp_pp(k); END DO
-         CALL dismsh_ensi_p(12,l,nodes_pp,npes,numpe,1,temp)
-     END DO ; IF(numpe==1) CLOSE(12)
-     real_time = real_time+1
+         temp(l)=disp_pp(k)
+       END DO
+       CALL dismsh_ensi_p(12,l,nodes_pp,npes,numpe,3,temp)
+     END DO
+     IF(numpe==1) CLOSE(12)
    END IF
 
   CALL MPI_BARRIER(MPI_COMM_WORLD,ier)
