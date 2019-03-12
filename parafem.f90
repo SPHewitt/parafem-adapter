@@ -14,12 +14,16 @@ PROGRAM main
   CHARACTER*50                    :: config, participantName, meshName
   CHARACTER*50                    :: writeInitialData, readItCheckp
   CHARACTER*50                    :: writeItCheckp, dataName
+
   INTEGER                         :: rank, commsize, ongoing, dimensions
   INTEGER                         :: meshID, vertexID, bool, vertexSize
   INTEGER                         :: displID,forceID,hasData
-  REAL(iwp)                       :: dtlimit,dt
-  REAL(iwp), DIMENSION(:), ALLOCATABLE :: vertex,forces,displacements,nodes
 
+  INTEGER,DIMENSION(:),ALLOCATABLE:: nodes,vertexIDs
+ 
+  REAL(iwp)                       :: dtlimit,dt
+  REAL(iwp), DIMENSION(:), ALLOCATABLE :: vertex,forces,displacements
+  REAL(iwp), DIMENSION(:), ALLOCATABLE :: verticies
   !----------------------------------------------------------------------
   ! PARAFEM VARIABLES
   !----------------------------------------------------------------------
@@ -77,16 +81,18 @@ PROGRAM main
   CALL calc_nels_pp(argv,nels,npes,numpe,partitioner,nels_pp)
 
   ! Degrees of Freedon per Element
+  nodof = 3
   ndof  =  nod*nodof
   ntot  =  ndof
+  ndim  = 3
 
   ALLOCATE(g_num_pp(nod,nels_pp),g_coord_pp(nod,ndim,nels_pp),        &
           rest(nr,nodof+1),g_g_pp(ntot,nels_pp))
   g_num_pp = zero; g_coord_pp = zero; rest = zero;
 
-  CALL read_g_num_pp(argv,iel_start,nn,npes,numpe,g_num_pp)
+  CALL read_g_num_pp(argv,iel_start,nn,npes,numpe,g_num_pp)  
   IF(meshgen==2) CALL abaqus2sg(element,g_num_pp)
-  CALL read_g_coord_pp(argv,g_num_pp,nn,npes,numpe,g_coord_pp)
+  CALL read_g_coord_pp(argv,g_num_pp,nn,npes,numpe,g_coord_pp) 
   CALL read_rest(argv,numpe,rest)
 
   ! Rearrange the rest Array
@@ -98,15 +104,14 @@ PROGRAM main
 
   ! Find the global Steering Matrix
   elements_0: DO iel=1,nels_pp
-    !CALL find_g(g_num_pp(:,iel),g_g_pp(:,iel),rest) ! Stable but slow
-    CALL find_g3(g_num_pp(:,iel),g_g_pp(:,iel),rest) ! Unstable but Fast
+    CALL find_g(g_num_pp(:,iel),g_g_pp(:,iel),rest) ! Stable but slow
+   ! CALL find_g3(g_num_pp(:,iel),g_g_pp(:,iel),rest) ! Unstable but Fast
   END DO elements_0
 
   ! Build GGL Array
   neq  =  MAXVAL(g_g_pp)
   neq  =  max_p(neq)
   CALL calc_neq_pp
-
   ! Most failures occur in this routine
   CALL calc_npes_pp(npes,npes_pp)
 
@@ -130,41 +135,45 @@ PROGRAM main
   vertexSize = loaded_nodes
 
   ALLOCATE(vertex(dimensions),nodes(vertexSize))
-
+  ALLOCATE(verticies(dimensions*vertexSize),vertexIDs(vertexSize))
+  nodes=0
+  verticies=0
+  vertexIDs=0 
   CALL precicef_get_mesh_id(meshName, meshID)
 
   OPEN(1,file=fname)
   DO i=1,vertexSize
     READ(1,*) vertexID, vertex(1), vertex(2), vertex(3)
     nodes(i)=vertexID
-    CALL precicef_set_vertex(meshID, vertex, vertexID)
+    verticies(i*dimensions-2)=vertex(1)
+    verticies(i*dimensions-1)=vertex(2)
+    verticies(i*dimensions-0)=vertex(3)
+    !CALL precicef_set_vertex(meshID, vertex, vertexID)
   ENDDO
   CLOSE(1)
+  CALL precicef_set_vertices(meshID,vertexSize,verticies,vertexIDs) 
   DEALLOCATE(vertex)
   ALLOCATE(forces(vertexSize*dimensions),displacements(vertexSize*dimensions))
 
+  forces=0
+  displacements=0
   displID=0
   forceID=0
 
-  !dataName='Displacements0'
-  !print*,dataName
-  
-  !CALL precicef_get_data_id(dataName,meshID,displID,50)
+  dataName='Displacements0' 
+  CALL precicef_get_data_id(dataName,meshID,displID)
 
-  dataName='Forces'
-  print*,dataName
- CALL precicef_has_data(dataName, hasData, 50, meshID)
- print*,"HELL"
- CALL precicef_get_data_id(dataName,meshID,forceID,7)
+  dataName='Forces0'
+  CALL precicef_get_data_id(dataName,meshID,forceID)
 
   forces=0.0
   displacements=0.0
 
   CALL precicef_initialize(dtlimit)
-
+  CALL precicef_action_required(writeInitialData, bool)
   CALL precicef_initialize_data()
-
   CALL precicef_ongoing(ongoing)
+  
   !! HARDCODED properties for the sake of quick and easy test Case
   num_var(1)=alpha1
   num_var(2)=beta1
@@ -178,21 +187,42 @@ PROGRAM main
 
   dt = 0.001
 
-    print*,"JHELLLo"
   !----------------------------------------------------------------------
   ! Time Loop
   !----------------------------------------------------------------------
+  CALL precicef_ongoing(ongoing)
   DO WHILE (ongoing.NE.0)
-    CALL precicef_read_bvdata(forceID,vertexSize,nodes,forces)
+  
+    CALL precicef_action_required(writeItCheckp, bool)
+      IF (bool.EQ.1) THEN
+        PRINT*,"Writing iteration checkpoint"
+        CALL precicef_fulfilled_action(writeItCheckp)
+      ENDIF
+    
+    CALL precicef_read_bvdata(forceID,vertexSize,vertexIDs,forces)
 
-    CALL runl(nodes,displacements,num_var,mat_prop,nr,loaded_nodes,dt, &
-               g_g_pp,g_num_pp,g_coord_pp,flag)
+    ! if bool == 0 Advance in time otherwise
+    
+    !CALL runl(nodes,forces,num_var,mat_prop,nr,loaded_nodes,dt, &
+    !           g_g_pp,g_num_pp,g_coord_pp,flag,displacements)
+    
+    CALL runnl(nodes,forces,num_var,mat_prop,nr,loaded_nodes,dt, &
+               g_g_pp,g_num_pp,g_coord_pp,bool,displacements)
 
-    CALL precicef_write_bvdata(displID,vertexSize,nodes,displacements)
+    CALL precicef_write_bvdata(displID,vertexSize,vertexIDs,displacements)
 
     CALL precicef_advance(dtlimit)
+    
+    CALL precicef_action_required(readItCheckp, bool)
+    IF (bool.EQ.1) THEN
+      PRINT*,"READING ITERATION CHECKPOINT"
+      CALL precicef_fulfilled_action(readItCheckp)
+    ELSE
+      WRITE (*,*) 'Advancing in time'
+  
+    ENDIF
+    
     CALL precicef_ongoing(ongoing)
-
 
   ENDDO
 

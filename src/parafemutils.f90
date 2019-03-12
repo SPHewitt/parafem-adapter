@@ -145,7 +145,7 @@
 
   ! Youngs Modulus, Poissons Ratio and Density
   e=sProp(1);v=sProp(2);rho=sProp(3);
-
+  
   ! [D] : Stress-Strain Matrix
   dee  =  zero 
   CALL deemat(dee,e,v)
