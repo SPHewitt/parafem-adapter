@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit if error occurs
+set -e
+
 # Solid Solver
 NSLOTS=2
 

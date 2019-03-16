@@ -3,7 +3,7 @@
 # Check PARAFEM_HOME is set
 if [ -z ${PARAFEM_HOME} ]; then
  echo "** WARNING: PARAFEM_HOME not set"
- exit
+ exit 1 
 fi
 
 # Check if softlinks have been made
