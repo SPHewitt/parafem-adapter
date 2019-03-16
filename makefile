@@ -30,7 +30,8 @@ SRC= \
 	$(SRCDIR)/SolverInterfaceF2003.f90 \
     $(SRCDIR)/parafeml.f90 \
     $(SRCDIR)/parafemutils.f90 \
-    $(SRCDIR)/parafemnl.f90
+    $(SRCDIR)/parafemnl.f90 \
+    $(SRCDIR)/input_precice.f90
 
 OBJ:=$(SRC:$(SRCDIR)%.f90=$(OBJDIR)%.o)
 
@@ -44,7 +45,7 @@ all: check-env
 
 $(EXE): $(OBJ)
 	@echo Compiling main
-	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) $(EXE).f90 -o $(BINDIR)/$@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
+	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -I$(MODDIR) $(EXE).f90 -o $(BINDIR)/$@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	@echo Compiling "$@"
