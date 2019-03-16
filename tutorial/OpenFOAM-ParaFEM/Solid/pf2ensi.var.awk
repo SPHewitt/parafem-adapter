@@ -1,1 +1,0 @@
-/home/mclsssh5/paraFem/parafem/bin/pf2ensi.var.awk
