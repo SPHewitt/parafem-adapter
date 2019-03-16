@@ -1,7 +1,7 @@
 # -----------------
 # Compiler
 # -----------------
-FC=/usr/local/bin/mpif90
+FC=mpif90
 FCFLAGS=
 FFLAGS=
 
