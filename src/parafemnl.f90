@@ -1,11 +1,11 @@
 SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
                   g_g_pp,g_num_pp,g_coord_pp,flag,disp,nn)
-  !/****f* parafeml/runl
+  !/****f* parafemnl/runnl
   !*  NAME
   !*    SUBROUTINE: runl
   !*
   !*  SYNOPSIS
-  !*    Usage:     runl_(forceNodes_,fext_OF_,numSchemes_,solidProps_,
+  !*    Usage:     runnl_(forceNodes_,fext_OF_,numSchemes_,solidProps_,
   !*                     &numRestrNodes_,&numFixedForceNodes_, &dtim,
   !*                     g_g_pp_OF_,g_num_pp_OF_,g_coord_pp_OF_,gravlo_,
   !*                     ptDtemp_,ptUtemp_,ptAtemp_);
@@ -57,7 +57,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
   IMPLICIT NONE
 
-!------------------------------------------------------------------------------ 
+!------------------------------------------------------------------------------
 ! 1. Declare variables used in the main program
 !------------------------------------------------------------------------------
 
@@ -82,15 +82,15 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   INTEGER                   :: break, nodeID, flag
   INTEGER,SAVE              :: real_time
 
-  REAL(iwp),INTENT(IN)      :: num_var(7),mat_prop(3),timeStep
+  REAL(iwp),INTENT(IN)      :: num_var(8),mat_prop(3),timeStep
   REAL(iwp),INTENT(IN)      :: g_coord_pp(nod,ndim,nels_pp)
 
   !REAL(iwp),INTENT(INOUT)   :: gravlo_pp(neq_pp)
   REAL(iwp),INTENT(INOUT)   :: val(ndim,loaded_nodes)
-  
+
   REAL(iwp),INTENT(OUT)    :: disp(ndim*loaded_nodes)
 
-  REAL(iwp)                 :: up,ray_a,ray_b
+  REAL(iwp)                 :: up,ray_a,ray_b,g_disp(ndim*loaded_nodes)
   REAL(iwp)                 :: e,v,rho,det,tol, maxdiff, tol2, detF
   REAL(iwp)                 :: energy, energy1, rn0
   REAL(iwp)                 :: a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10
@@ -104,7 +104,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   CHARACTER(len=50)         :: fname_base, fname
   CHARACTER(LEN=50)         :: argv
   CHARACTER(LEN=6)          ::ch
- 
+
   LOGICAL :: converged, timewrite=.TRUE.
 
 !------------------------------------------------------------------------------
@@ -135,29 +135,29 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   REAL(iwp),SAVE,ALLOCATABLE  :: pmul_pp(:,:),utemp_pp(:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: temp_pp(:,:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: vel_pp(:),acel_pp(:),eld_pp(:,:)
-  REAL(iwp),SAVE,ALLOCATABLE  :: fext_o_pp(:),shape_integral_pp(:,:)
+  REAL(iwp),SAVE,ALLOCATABLE  :: shape_integral_pp(:,:)
 
   REAL(iwp),SAVE,ALLOCATABLE  :: fun(:),emm(:,:),ecm(:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: d2x1_ppstar(:),meff_pp(:),ceff_pp(:)
   REAL(iwp),SAVE,ALLOCATABLE  :: storemm_pp(:,:,:),storekm_pp(:,:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: storecm_pp(:,:,:),temp(:),disp_pp(:)
- 
-  INTEGER,SAVE,ALLOCATABLE  :: num(:),nr_iters(:,:)         
+
+  INTEGER,SAVE,ALLOCATABLE  :: num(:),nr_iters(:,:)
   INTEGER,SAVE,ALLOCATABLE  :: comp(:,:)
 
- 
+
 !------------------------------------------------------------------------------
 ! 3. Start Program
 !------------------------------------------------------------------------------
 
   IF(numpe .EQ. 1)WRITE(*,*)"ParaFEM Large Strain Solver: "
-  
+
   ! Barrier (may not be needed but safe)
   CALL MPI_BARRIER(MPI_COMM_WORLD,ier)
-  
+
   ! Variables required for writing and partioning
   argv="xx24"; nlen=4; partitioner=1
-  
+
   SELECT CASE(nod)
     CASE(8)
       nip = 8; element = "hexahedron"; dimH = 8
@@ -166,26 +166,24 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   END SELECT
 
   num_load_steps = 1         ! Number of load steps
-
   printres   = 0             ! Write .res file
 
-  ! Set Numerical and Material Values 
-  beta   =  0.25!num_var(1)    ! Beta  (Typically = 0.25)
-  delta  =  0.5!num_var(2)    ! Delta (Typically = 0.5)
-  ray_a  =  0.001!num_var(3)    ! Damping parameter A
-  ray_b  =  0.001!num_var(4)    ! Damping parameter B
-  tol    =  1e-6!num_var(5)    ! Tolerance of PCG loop
-  limit  =  500!num_var(6)    ! Max number of Interation in PCG
-  tol2   =  1e-5!num_var(7)    ! Tolerance for Newton-Raphson loop
+  ! Set Numerical and Material Values
+  beta   =  num_var(1)    ! Beta  (Typically = 0.25)
+  delta  =  num_var(2)    ! Delta (Typically = 0.5)
+  ray_a  =  num_var(3)    ! Damping parameter A
+  ray_b  =  num_var(4)    ! Damping parameter B
+  tol    =  num_var(5)    ! Tolerance of PCG loop
+  tol2   =  num_var(6)    ! Tolerance for Newton-Raphson loop
+  limit  =  num_var(7)    ! Max number of Interation in PCG
+  npri   =  num_var(8)    ! Write point
+  dtim   =  timeStep
 
-  dtim    =  timeStep
+  ! Youngs ModulusPoissons Ratio and Density
+  e     =  mat_prop(1)
+  v     =  mat_prop(2)
+  rho   =  mat_prop(3)
 
-  ! Youndgs ModulusPoissons Ratio and Density
-
-  e     =  5.6e6!mat_prop(1)
-  v     =  0.4!mat_prop(2)
-  rho   =  1000!mat_prop(3)
- 
   ! Allocate memory required for the time loop
   IF(.NOT.ALLOCATED(timest))THEN
     ! Vectors{eqns}
@@ -229,26 +227,23 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
     ALLOCATE(timest(20))
     ALLOCATE(nr_timest(10,20))
     ALLOCATE(nr_iters(10,1))
-    
+
     x0_pp    =  zero
     d1x0_pp =  zero
     d2x0_pp  =  zero;
-    
+
     x0_pp_old    =  zero;
     d1x0_pp_old =  zero;
     d2x0_pp_old  =  zero;
-    
+
     x1_pp    =  zero;
     d1x1_pp  =  zero;
     d2x1_pp =  zero;
-    
+
     printres=1
-    
     real_time=1
-   !ALLOCATE(fext_o_pp(neq_pp))
-   !fext_o_pp  =  zero
   ENDIF
-      
+
   IF(.NOT.ALLOCATED(coord))THEN
     ALLOCATE(coord(nod,ndim))
     ALLOCATE(bee(nst,ntot))
@@ -275,9 +270,6 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
     ALLOCATE(deeF(nst,nst))
     ALLOCATE(geomH(dimH,dimH))
     ALLOCATE(points(ndim,nip))
-    !ALLOCATE(Dfield(ntot,nels_pp))
-    !ALLOCATE(Ufield(ntot,nels_pp))
-    !ALLOCATE(Afield(ntot,nels_pp))
   ENDIF
 
   timest        =  zero
@@ -297,14 +289,15 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   CALL MPI_BARRIER(MPI_COMM_WORLD,ier)
 
   fext_pp = zero
+
   CALL load(g_g_pp,g_num_pp,node,val,fext_pp(1:))
 
   CALL MPI_BARRIER(MPI_COMM_WORLD,ier)
-  
+
   fext_pp(1:) = fext_pp(1:) !+ gravlo_pp
 
   fextpiece_pp(1:) = fext_pp(1:)/FLOAT(num_load_steps)
-  
+
 !------------------------------------------------------------------------------
 ! 6. Set Initial Conditions
 !------------------------------------------------------------------------------
@@ -313,11 +306,11 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   ! Implement strong coupling link
   ! If strong coupling being used flag will be set
   ! xo_pp is set at end of previous iteration
-     
+
     ! IF flag == 1 - new time step
     ! In this case store the conditions at this point
     If (flag == 1) THEN
-      PRINT*,"Storing data at t(n-1):"
+      IF(numpe .EQ. 1)WRITE(*,*)"Storing previous data: "
       x0_pp_old(1:)    =  x0_pp(1:)
       d1x0_pp_old(1:) =  d1x0_pp(1:)
       d2x0_pp_old(1:)  =  d2x0_pp(1:)
@@ -327,23 +320,23 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
       d1x0_pp(1:) =  d1x0_pp_old(1:)
       d2x0_pp(1:)  =  d2x0_pp_old(1:)
     ENDIF
-    
+
   !---- Clean Arrays ------
- 
+
   d1x1_pp =  zero
   d2x1_pp =  zero
   x1_pp   =  zero
 
   vu_pp   =  zero
-  xu_pp   =  zero 
-  
-  nr_timest = zero; 
-    
+  xu_pp   =  zero
+
+  nr_timest = zero;
+
 !-------------------------------------------------------------------------
 ! 7. Initialise the solution vector to 0.0
 !-------------------------------------------------------------------------
   timest(4)     =  elap_time()
-  
+
   ! U_n = U
   xnew_pp = x0_pp
 
@@ -364,11 +357,11 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
   timest(5)     =  elap_time()
 
-  DO iload = 1,num_load_steps    
+  DO iload = 1,num_load_steps
     converged = .FALSE.
-   
+
    fext_pp(1:) = FLOAT(iload)*fextpiece_pp(1:)
-    
+
 !------------------------------------------------------------------------------
 !----------------------- Start Newton-Raphson iterations ----------------------
 !------------------------------------------------------------------------------
@@ -390,11 +383,11 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 !-------------------------------------------------------------------------
       timest(9)     =  elap_time()
 
-      ! Clean [K], [M] and [C] 
+      ! Clean [K], [M] and [C]
       storekm_pp  =  zero
       storemm_pp  =  zero
       storecm_pp  =  zero
-      
+
       DO iel = 1,nels_pp
         kmat_elem = 0._iwp
         kgeo_elem = 0._iwp
@@ -416,7 +409,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
           CALL push4r(detF,jacF,cmat,cspa)
           CALL voigt2to1(sigma,sigma1C)
           CALL voigt4to2(cspa,deeF)
-        
+
           ! F_int
           storefint_pp(:,iel) = storefint_pp(:,iel) +         &
              MATMUL(TRANSPOSE(beeF),sigma1C)*det*detF*weights(igauss)
@@ -428,17 +421,17 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
           DO i = 1,dimH
             DO j = 1,dimH
-              kgeo_elem(3*i-2,3*j-2) = kgeo_elem(3*i-2,3*j-2) + & 
+              kgeo_elem(3*i-2,3*j-2) = kgeo_elem(3*i-2,3*j-2) + &
                   geomH(i,j)*det*detF*weights(igauss)
-              kgeo_elem(3*i-1,3*j-1) = kgeo_elem(3*i-1,3*j-1) + & 
+              kgeo_elem(3*i-1,3*j-1) = kgeo_elem(3*i-1,3*j-1) + &
                   geomH(i,j)*det*detF*weights(igauss)
-              kgeo_elem(3*i,3*j) = kgeo_elem(3*i,3*j)         + & 
+              kgeo_elem(3*i,3*j) = kgeo_elem(3*i,3*j)         + &
                   geomH(i,j)*det*detF*weights(igauss)
             END DO
           END DO
 
 
-        ! Mass Matrix	   
+        ! Mass Matrix
         fun = zero
 
         ! BUG: shape_Fun in shared/new_library.f90
@@ -452,11 +445,11 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
         xi    = points(1,igauss)
         eta   = points(2,igauss)
         zeta  = points(3,igauss)
-        etam  = one  - eta 
-        xim   = one  - xi  
+        etam  = one  - eta
+        xim   = one  - xi
         zetam = one  - zeta
-        etap  = eta  + one 
-        xip   = xi   + one 
+        etap  = eta  + one
+        xip   = xi   + one
         zetap = zeta + one
 
        fun = (/0.125_iwp*xim*etam*zetam,0.125_iwp*xim*etam*zetap,          &
@@ -475,7 +468,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
         ! M
         storemm_pp(:,:,iel)  =  emm
-        
+
         ! C
         storecm_pp(:,:,iel)=ray_a*storemm_pp(:,:,iel)+ray_b*storekm_pp(:,:,iel)
 
@@ -483,7 +476,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
       timest(10)     =  elap_time()
       nr_timest(inewton,2)= timest(10)-timest(9)
- 
+
       ! F_int
       fint_pp(:) = .0_iwp
       CALL SCATTER(fint_pp(1:),storefint_pp)
@@ -494,7 +487,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 !-------------------------------------------------------------------------
 ! 9. Newmark Scheme
 !-------------------------------------------------------------------------
- 
+
     ! New mark parameters
     ! Finite element procedures in engineering analysis, K‐J. Bathe, Prentice‐Hall, 1982, doi:10.1002/nag.1610070412
     ! Pages 511-513
@@ -526,23 +519,23 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
      vu_pp = zero
      CALL SCATTER(vu_pp(1:),utemp_pp)
-     
+
       !C_eff
      ceff_pp = zero
      ceff_pp(1:) = a1*(x0_pp(1:)-xnew_pp(1:)) + a4*d1x0_pp(1:) + a5*d2x0_pp(1:)
-     
+
      temp_pp  =  zero
      temp_pp  =  storecm_pp
      pmul_pp = zero
-     
+
      ! C*C_eff
      CALL GATHER(ceff_pp(1:),pmul_pp) ; utemp_pp=zero
-     
+
      DO iel=1,nels_pp
        CALL DGEMV('N',ntot,ntot,one,temp_pp(:,:,iel),ntot,                 &
                 pmul_pp(:,iel),1,zero,utemp_pp(:,iel),1)
      END DO
-     
+
      xu_pp = zero
      CALL SCATTER(xu_pp(1:),utemp_pp)
 
@@ -553,7 +546,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
      ! {r_pp}
      r_pp(1:) = fext_pp(1:) - fint_pp(1:) + vu_pp(1:) + xu_pp(1:)
 
-     ! Compute maxdiff of residual 
+     ! Compute maxdiff of residual
      maxdiff =  MAXABSVAL_P(r_pp(1:))
 
      ! Normalise residual vector and stiffness matrix for pcg
@@ -572,11 +565,11 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 !-------------------------------------------------------------------------
       diag_precon_tmp = .0_iwp
       DO iel = 1,nels_pp
-        DO k = 1,ntot 
+        DO k = 1,ntot
           diag_precon_tmp(k,iel)=diag_precon_tmp(k,iel) + storekm_pp(k,k,iel)
         END DO
       END DO
-  
+
       diag_precon_pp(:) = .0_iwp
       CALL SCATTER(diag_precon_pp(1:),diag_precon_tmp)
 
@@ -619,26 +612,26 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
       IF (inewton==1) THEN
        energy1 = energy
       END IF
-      
+
       !if(numpe .EQ. 1)WRITE(*,*)iload,inewton,energy,energy/energy1
-      
+
       IF (inewton>1) THEN
         IF ((energy/energy1)<=tol2) THEN
           converged = .TRUE.
-        END IF 
-      END IF 
+        END IF
+      END IF
 
       IF(converged .OR. inewton==10) THEN
         EXIT
       END IF
 
     END DO iterations
-   
+
    IF(numpe .EQ. 1)WRITE(*,'(a,I3,a,ES10.3)')," Newton-Raphson Iters: ",inewton,&
                                         ",  Final residual: ", (energy/energy1)
 
    nr_timest(inewton,7)= elap_time()-timest(14)
- 
+
   END DO !iload
 
 !-------------------------------------------------------------------------
@@ -648,18 +641,18 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
    timest(15)     =  elap_time()
 
    x1_pp=zero; d2x1_ppstar= zero; d1x1_pp= zero; d2x1_pp=zero;
- 
+
    x1_pp(1:)       = xnew_pp(1:)
 
    d2x1_ppstar(1:) = a0*(x1_pp(1:)-x0_pp(1:)) - a2*d1x0_pp(1:) - a3 * d2x0_pp(1:)
    d1x1_pp(1:)     = d1x0_pp(1:) + a6*d2x0_pp(1:) + a7*d2x1_ppstar(1:)
-   d2x1_pp(1:)     = d2x1_ppstar(1:)  
-   
+   d2x1_pp(1:)     = d2x1_ppstar(1:)
+
    ! Update initial data
    x0_pp=x1_pp
    d1x0_pp=d1x1_pp
    d2x0_pp=d2x1_pp
-     
+
 !------------------------------------------------------------------------------
 ! 14. Gather Data from ntot,nels_pp to ndim,nodes_pp
 !------------------------------------------------------------------------------
@@ -674,9 +667,9 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   ! Displacement
   eld_pp   =  zero
   CALL gather(x1_pp(1:),eld_pp)
-  !Dfield=eld_pp
-  
+
   break=0
+  disp=0
   ! Loop through loaded nodes
   DO i=1,loaded_nodes
     break=0
@@ -693,34 +686,24 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
           break=1
           EXIT
         ENDIF
-      ENDDO    
+      ENDDO
     ENDDO
-  ENDDO 
-
-  ! Velocity
-  !eld_pp   =  zero
-  !CALL gather(d1x1_pp(1:),eld_pp)
-  !Ufield=eld_pp
+  ENDDO
 
 
-  ! Acceleration
-  !eld_pp   =  zero
-  !CALL gather(d2x1_pp(1:),eld_pp)
-  !Afield=eld_pp
+  ! Write out a *.ensi.DISPL.***** File
   IF(flag==1)THEN
     CALL calc_nodes_pp(nn,npes,numpe,node_end,node_start,nodes_pp)
     real_time = real_time + 1
   ENDIF
-  
+
   IF(.NOT.ALLOCATED(temp))THEN
     ALLOCATE(temp(nodes_pp))
     ALLOCATE(disp_pp(nodes_pp*ndim))
   ENDIF
-   
-  npri=20
+
   ! Write Data to ensi file
   IF( (flag==1) .AND. (real_time/npri*npri==real_time))THEN
-  !IF(.false.)THEN
        WRITE(ch,'(I6.6)') real_time
        OPEN(12,file=argv(1:nlen)//".ensi.DISPL-"//ch,status='replace',   &
             action='write'); WRITE(12,'(A)')                             &
