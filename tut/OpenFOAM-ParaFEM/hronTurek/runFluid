@@ -1,0 +1,38 @@
+#!/bin/bash
+cd ${0%/*} || exit 1    		    		# Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
+
+# Fluid Solver
+
+# Number of Processors
+NSLOTS=2
+
+# 1 for true, 0 for false
+parallel=0
+if [ "$1" = "-parallel" ]; then
+    parallel=1
+fi
+
+echo "Preparing and running the Fluid participant..."
+if [ $parallel -eq 1 ]; then
+    ln -s -f precice-config_parallel.xml precice-config.xml
+else
+    ln -s -f precice-config_serial.xml precice-config.xml
+fi
+
+cp -r Fluid/0.orig/ Fluid/0/
+blockMesh -case Fluid
+checkMesh -case Fluid
+
+# Run
+cd Fluid
+	solver=$(getApplication)
+cd ..
+if [ $parallel -eq 1 ]; then
+    sed s/NSLOTS/$NSLOTS/ Fluid/system/decomposeParDict.orig > Fluid/system/decomposeParDict
+    decomposePar -force -case Fluid
+    mpirun -np $NSLOTS $solver -parallel -case Fluid
+    reconstructPar -case Fluid
+else
+    $solver -case Fluid
+fi

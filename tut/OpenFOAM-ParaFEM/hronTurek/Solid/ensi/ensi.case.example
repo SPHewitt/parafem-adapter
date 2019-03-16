@@ -1,0 +1,22 @@
+#
+# ParaFEM pf2ensi generated post-process file
+# Ensight Gold Format
+#
+# Problem name:	xx24
+#
+FORMAT
+type:	ensight gold
+GEOMETRY
+model:	1	xx24.ensi.geo
+VARIABLE
+scalar per node:		Bound_Nodes	xx24.ensi.NDBND
+vector per node:		Loaded_Nodes	xx24.ensi.NDLDS
+scalar per element:		Material	xx24.ensi.MATID
+vector per node:     		Displacement  	xx24.ensi.DISPL-******
+TIME
+time set:     1
+number of steps:    2
+filename start number:    0
+filename increment:    1
+time values: 
+0 1

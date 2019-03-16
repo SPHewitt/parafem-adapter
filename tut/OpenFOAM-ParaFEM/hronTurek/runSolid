@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Solid Solver
+NSLOTS=2
+
+parallel=0
+if [ "$1" = "-parallel" ]; then
+  parallel=1
+fi
+
+# Prepare in silent mode
+cd Solid
+    ./makeMesh.sh 
+cd -
+
+# Run
+if [ $parallel -eq 1 ]; then
+  mpirun -np $NSLOTS ../../../bin/parafem Solid/xx24 precice-config.xml ParaFEM ParaFEM_Mesh 
+else
+  ../../../bin/parafem Solid/xx24 precice-config.xml ParaFEM ParaFEM_Mesh
+fi

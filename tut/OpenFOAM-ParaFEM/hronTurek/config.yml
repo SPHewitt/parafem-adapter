@@ -1,0 +1,10 @@
+participants:
+
+    ParaFEM:
+        interfaces:
+        - nodes-mesh: ParaFEM_Mesh
+          patch: surface
+          read-data: [Forces0]
+          write-data: [Displacements0]
+          
+precice-config-file: ./precice-config.xml

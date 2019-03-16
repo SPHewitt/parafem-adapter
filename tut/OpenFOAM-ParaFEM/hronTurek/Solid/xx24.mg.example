@@ -1,0 +1,6 @@
+iotype,nels,nxe,nye,nze,nip
+aa,bb,cc,rho
+e,v,beta,delta
+alpha1,beta1
+npri,dtim
+tol_pcg,tol_nr,limit
