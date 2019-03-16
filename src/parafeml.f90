@@ -161,7 +161,6 @@
 
   ! Allocate memory required for the time loop
   IF(.NOT.ALLOCATED(timest))THEN
-   CALL system_mem_usage(RSSa,VMa)
    ALLOCATE(x0_pp(neq_pp),d1x0_pp(neq_pp),x1_pp(neq_pp),vu_pp(neq_pp))
    ALLOCATE(u_pp(neq_pp),d2x0_pp(neq_pp),loads_pp(neq_pp))
    ALLOCATE(d1x1_pp(neq_pp),d2x1_pp(neq_pp),d_pp(neq_pp),p_pp(neq_pp))
