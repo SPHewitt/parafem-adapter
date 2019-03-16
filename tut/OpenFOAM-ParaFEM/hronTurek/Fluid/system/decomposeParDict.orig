@@ -8,9 +8,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    numberOfSubdomains 6;
+    numberOfSubdomains NSLOTS;
     
-    method hierarchical;
+    method scotch;
     hierarchicalCoeffs
     {
         n (3 2 1);
