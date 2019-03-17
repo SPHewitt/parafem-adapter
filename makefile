@@ -2,8 +2,7 @@
 # Compiler
 # -----------------
 FC=mpif90
-FCFLAGS=
-FFLAGS=
+FCFLAGS=-Wall -g 
 
 # -----------------
 # Directories
@@ -23,15 +22,15 @@ PARAFEMROOT=${PARAFEM_HOME}
 PARAFEMLIB=$(PARAFEMROOT)/lib
 PARAFEMMOD=$(PARAFEMROOT)/include/mpi
 
-# Executable and main file
+# Executable name
 EXE=parafem
 
 SRC= \
 	$(SRCDIR)/SolverInterfaceF2003.f90 \
-    $(SRCDIR)/parafeml.f90 \
     $(SRCDIR)/parafemutils.f90 \
     $(SRCDIR)/parafemnl.f90 \
-    $(SRCDIR)/input_precice.f90
+    $(SRCDIR)/input_precice.f90 \
+    $(SRCDIR)/parafem.f90
 
 OBJ:=$(SRC:$(SRCDIR)%.f90=$(OBJDIR)%.o)
 
@@ -45,11 +44,11 @@ all: check-env
 
 $(EXE): $(OBJ)
 	@echo Compiling main
-	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -I$(MODDIR) $(EXE).f90 -o $(BINDIR)/$@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
+	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -I$(MODDIR) -o $(BINDIR)/$@ $^ -L$(PRECICELIB) -lprecice -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	@echo Compiling "$@"
-	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -o $@ -c $< -J$(MODDIR) -L$(PARAFEMLIB) -lParaFEM_mpi.5.0.3 -larpack_linuxdesktop
+	$(FC) $(FCFLAGS) -I$(PARAFEMMOD) -o $@ -c $< -J$(MODDIR) 
 
 .PHONY: check-env
 check-env:
@@ -61,7 +60,8 @@ endif
 clean:
 	@echo cleaning
 	rm -rf obj/*.o
-	rm -rf main
+	rm -rf bin/*
+	rm -rf mod/*
 	rm -rf *.log
 
 .PHONY: test
