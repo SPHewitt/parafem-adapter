@@ -77,7 +77,7 @@
   INTEGER,PARAMETER         :: nodof=3,ndim=3,nst=6,nod=8
   REAL(iwp),PARAMETER       :: zero=0.0_iwp
 
-  INTEGER                   :: i,j,k,iel,ndof,nip
+  INTEGER                   :: i,k,iel,ndof,nip
 
   REAL(iwp),INTENT(INOUT)   :: store_km_pp(ndim*nod,ndim*nod,nels_pp)
   REAL(iwp),INTENT(INOUT)   :: store_mm_pp(ndim*nod,ndim*nod,nels_pp)
@@ -103,7 +103,6 @@
   REAL(iwp),ALLOCATABLE :: jac(:,:),der(:,:),deriv(:,:),bee(:,:)
   REAL(iwp),ALLOCATABLE :: fun(:),emm(:,:),ecm(:,:)
 
-  INTEGER,ALLOCATABLE   :: node(:),localcount(:),readcount(:)
 
   IF(numpe .EQ. 1)PRINT*,"Finding Diagonal Preconditioner: "
 
@@ -215,7 +214,7 @@
   !--------------------------------------------------------------------
 
 
-  SUBROUTINE gravity_loads(gravlo_pp,specWeight,nn,nodof,nod,ndim,nr,g_coord_pp,g_num_pp,rest)
+  SUBROUTINE gravity_loads(gravlo_pp,specWeight,nodof,nod,ndim,g_coord_pp)
 
   !/****f* parafemutils/gloads
   !*  NAME
@@ -264,17 +263,14 @@
 
   IMPLICIT NONE
 
-  INTEGER                 :: i,j,k,iel,ndof,nodof,nn,nip
-  INTEGER                 :: node_end,node_start,nodes_pp
+  INTEGER                 :: i,iel,ndof,nodof,nip
 
-  INTEGER,INTENT(IN)      :: nr,nod,ndim,g_num_pp(nod,nels_pp)
-  INTEGER,INTENT(IN)      :: rest(nr,nodof+1)
+  INTEGER,INTENT(IN)      :: nod,ndim
 
   REAL(iwp),PARAMETER     :: zero=0.0_iwp
 
-  REAL(iwp)               :: lamba,det
+  REAL(iwp)               :: det
   REAL(iwp)               :: pmul_pp(ntot,nels_pp)
-  REAL(iwp)               :: load_pp(ndim*nn)
 
   REAL(iwp),INTENT(IN)    :: specWeight,g_coord_pp(nod,ndim,nels_pp)
 
@@ -359,6 +355,7 @@ END SUBROUTINE gravity_loads
   CHARACTER(LEN=50), INTENT(IN)  :: job_name
   INTEGER, INTENT(IN)            :: nn,nr,inewton
   INTEGER, INTENT(IN)            :: loaded_nodes,nr_iters(inewton,1)
+  INTEGER                        :: i  
   REAL(iwp), INTENT(IN)          :: timest(17)
   REAL(iwp), INTENT(IN)          :: nr_timest(10,20)
 
@@ -367,7 +364,6 @@ END SUBROUTINE gravity_loads
 !------------------------------------------------------------------------------
 
   CHARACTER(LEN=50)              :: fname
-  INTEGER                        :: i          ! loop counter
 
   IF(numpe==1) THEN
 
@@ -381,7 +377,7 @@ END SUBROUTINE gravity_loads
     WRITE(11,'(/A)')   "BASIC JOB DATA                                  "
 
     WRITE(11,'(A,I12)')    "Number of processors used                   ",npes
-    !WRITE(11,'(A,I12)')    "Number of nodes in the mesh                 ",nn
+    WRITE(11,'(A,I12)')    "Number of nodes in the mesh                 ",nn
     WRITE(11,'(A,I12)')    "Number of nodes that were restrained        ",nr
     WRITE(11,'(A,I12)')    "Number of equations solved                  ",neq
     IF(loaded_nodes > 0) THEN
@@ -496,8 +492,6 @@ END SUBROUTINE gravity_loads
 !------------------------------------------------------------------------------
 
   CHARACTER(LEN=50)              :: fname
-  INTEGER                        :: i          ! loop counter
-
 
   IF(numpe==1) THEN
 

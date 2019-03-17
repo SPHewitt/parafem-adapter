@@ -71,14 +71,14 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
 
   INTEGER                   :: printres
-  INTEGER                   :: nels,nip,nlen
-  INTEGER                   :: nf_start, fmt=1, i, j, k, m, l
+  INTEGER                   :: nip,nlen
+  INTEGER                   :: i, j, k, l
   INTEGER                   :: iters, limit, iel
   INTEGER                   :: num_load_steps, iload, igauss
-  INTEGER                   :: dimH, inewton, jump, npes_pp
+  INTEGER                   :: dimH, inewton 
   INTEGER                   :: partitioner=1,npri
   INTEGER                   :: nodes_pp, node_start
-  INTEGER                   :: node_end, idx1, idx2
+  INTEGER                   :: node_end
   INTEGER                   :: break, nodeID, flag
   INTEGER,SAVE              :: real_time
 
@@ -88,24 +88,21 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   !REAL(iwp),INTENT(INOUT)   :: gravlo_pp(neq_pp)
   REAL(iwp),INTENT(INOUT)   :: val(ndim,loaded_nodes)
 
-  REAL(iwp),INTENT(OUT)    :: disp(ndim*loaded_nodes)
+  REAL(iwp),INTENT(OUT)     :: disp(ndim*loaded_nodes)
 
-  REAL(iwp)                 :: up,ray_a,ray_b,g_disp(ndim*loaded_nodes)
+  REAL(iwp)                 :: ray_a,ray_b
   REAL(iwp)                 :: e,v,rho,det,tol, maxdiff, tol2, detF
   REAL(iwp)                 :: energy, energy1, rn0
-  REAL(iwp)                 :: a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10
+  REAL(iwp)                 :: a0,a1,a2,a3,a4,a5,a6,a7
   REAL(iwp)                 :: dtim,beta,delta
 
   REAL(iwp)                 :: xi,eta,zeta,etam,xim,zetam,etap,xip,zetap
-  REAL(iwp),SAVE            :: time
 
   CHARACTER(len=15)         :: element
-  CHARACTER(len=50)         :: text
-  CHARACTER(len=50)         :: fname_base, fname
   CHARACTER(LEN=50)         :: argv
   CHARACTER(LEN=6)          ::ch
 
-  LOGICAL :: converged, timewrite=.TRUE.
+  LOGICAL :: converged 
 
 !------------------------------------------------------------------------------
 ! 2. Declare dynamic arrays
@@ -134,8 +131,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   REAL(iwp),SAVE,ALLOCATABLE  :: vu_pp(:),xu_pp(:)
   REAL(iwp),SAVE,ALLOCATABLE  :: pmul_pp(:,:),utemp_pp(:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: temp_pp(:,:,:)
-  REAL(iwp),SAVE,ALLOCATABLE  :: vel_pp(:),acel_pp(:),eld_pp(:,:)
-  REAL(iwp),SAVE,ALLOCATABLE  :: shape_integral_pp(:,:)
+  REAL(iwp),SAVE,ALLOCATABLE  :: eld_pp(:,:)
 
   REAL(iwp),SAVE,ALLOCATABLE  :: fun(:),emm(:,:),ecm(:,:)
   REAL(iwp),SAVE,ALLOCATABLE  :: d2x1_ppstar(:),meff_pp(:),ceff_pp(:)
@@ -399,8 +395,8 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
         auxm(:,2) = xnewel_pp(comp(:,2),iel)
         auxm(:,3) = xnewel_pp(comp(:,3),iel)
 
-        emm  	=  0._iwp
-        ecm  	=  0._iwp
+        emm  =  0._iwp
+        ecm  =  0._iwp
 
         DO igauss = 1,nip
           CALL kine3D(igauss,auxm,coord,points,det,detF,beeF,defE,derivF,jacF)

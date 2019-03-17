@@ -17,7 +17,7 @@ PROGRAM main
 
   INTEGER                  :: rank, commsize, ongoing, dimensions
   INTEGER                  :: meshID, vertexID, bool, vertexSize
-  INTEGER                  :: displID,forceID,hasData,localVertexSize
+  INTEGER                  :: displID,forceID,localVertexSize
 
   INTEGER,ALLOCATABLE      :: nodes(:),vertexIDs(:)
   INTEGER,ALLOCATABLE      :: local_nodes(:)
@@ -32,7 +32,7 @@ PROGRAM main
   CHARACTER(LEN=15)        :: element
 
   INTEGER                  :: iel,nip,npes_pp,partitioner,ndof
-  INTEGER                  :: i,j,k,limit,loaded_nodes,meshgen
+  INTEGER                  :: i,j,limit,loaded_nodes,meshgen
   INTEGER                  :: ndim,nels,nn,nod,nodof,npri,nr,nres
   INTEGER                  :: nlen,flag,count
 
@@ -40,7 +40,7 @@ PROGRAM main
 
   REAL(iwp),PARAMETER      :: zero=0.0_iwp
 
-  REAL(iwp)                :: e,v,alpha1,beta1,omega,rho
+  REAL(iwp)                :: e,v,alpha1,beta1,rho
   REAL(iwp)                :: beta,delta,tol_pcg,tol_nr
   REAL(iwp)                :: mat_prop(3),num_var(8)
 
@@ -101,7 +101,7 @@ PROGRAM main
   ALLOCATE(rest(nr,nodof+1))
   ALLOCATE(g_g_pp(ntot,nels_pp))
 
-  g_num_pp = zero; g_coord_pp = zero; rest = zero; g_g_pp=zero
+  g_num_pp = 0; g_coord_pp = zero; rest = 0; g_g_pp=0
 
   CALL read_g_num_pp(argv,iel_start,nn,npes,numpe,g_num_pp)
   IF(meshgen==2) CALL abaqus2sg(element,g_num_pp)
@@ -112,8 +112,8 @@ PROGRAM main
   CALL rearrange(rest)
 
   ! Clean arrays
-  g_g_pp  =  zero
-  neq     =  zero
+  g_g_pp  =  0 
+  neq     =  0 
 
   ! Find the global Steering Matrix
   elements_0: DO iel=1,nels_pp
