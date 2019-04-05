@@ -1,6 +1,6 @@
   SUBROUTINE runl(node,val,num_var,mat_prop,nr,loaded_nodes,time_step, &
                   g_g_pp,g_num_pp,g_coord_pp,flag,disp)
-  !/****f* parafeml/runl
+  !/****f* run_linear/runl
   !*  NAME
   !*    SUBROUTINE: runl
   !*
@@ -109,9 +109,9 @@
   REAL(iwp),SAVE,ALLOCATABLE:: Afield(:,:)
 
 
-!------------------------------------------------------------------------------
+!---------------------------------------------------------------------
 ! 3. Start Program
-!------------------------------------------------------------------------------
+!---------------------------------------------------------------------
   IF(numpe .EQ. 1)PRINT*,"ParaFEM Small Strain Solver:"
 
   IF(.NOT. ALLOCATED(diag_precon_pp))THEN
@@ -122,8 +122,8 @@
 
     store_km_pp = zero; store_mm_pp=zero;diag_precon_pp=zero;
    
-    CALL finddiagprecon(store_km_pp,store_mm_pp,g_coord_pp,num_var,mat_prop, &
-                   diag_precon_pp,time_step)
+    CALL find_diag_precon(store_km_pp,store_mm_pp,g_coord_pp,num_var,&
+                          mat_prop,diag_precon_pp,time_step)
   ENDIF
 
   IF(time_step_orig .NE. time_step)THEN
@@ -132,8 +132,8 @@
 
     time_step_orig = time_step
     store_km_pp = zero; store_mm_pp=zero;diag_precon_pp=zero;
-    CALL finddiagprecon(store_km_pp,store_mm_pp,g_coord_pp,num_var,mat_prop, &
-                   diag_precon_pp,time_step)
+    CALL find_diag_precon(store_km_pp,store_mm_pp,g_coord_pp,num_var,&
+                          mat_prop,diag_precon_pp,time_step)
   ENDIF
 
   ! Barrier (may not be needed but safe)

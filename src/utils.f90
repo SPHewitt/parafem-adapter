@@ -1,20 +1,19 @@
-  !/****h* parafemutils
+  !/****h* utils
   !*  NAME
-  !*    parafemutils - Collection of fortran subroutines
+  !*    utils - Collection of fortran subroutines
   !*
   !*  SYNOPSIS
   !*    This group of subroutines is a collection of routines
   !*    that is used by the parafem solvers.
   !*
   !*    These routines are separated from the solver
-  !*    fortran files (parafeml.f90 and parafemnl.f90)
-  !*    to improve the structure of the software.
+  !*    fortran files to improve the structure of the software.
   !*
   !*  FUNCTION
-  !*    This is a group of subroutines required for the OpenFPCI.
+  !*    This is a group of subroutines is required for the
+  !*    the parafem-adapter. 
   !*
-  !*    The routines provide an interface between Foam-Extend and
-  !*    ParaFEM.
+  !*    The routines provide adittional functionality to parafem.
   !*
   !*    Subroutine           Purpose
   !*
@@ -33,14 +32,14 @@
   !******
   !*/
 
-  SUBROUTINE finddiagprecon(store_km_pp,store_mm_pp,g_coord_pp,numVar,&
-                            sProp,diag_precon_pp,time_step)
-  !/****f* parafeml/finddiagprecon
+  SUBROUTINE find_diag_precon(store_km_pp,store_mm_pp,g_coord_pp,&
+                              numVar,sProp,diag_precon_pp,time_step)
+  !/****f* utils/find_diag_precon
   !*  NAME
-  !*    SUBROUTINE: finddiagprecon
+  !*    SUBROUTINE: find_diag_precon
   !*
   !*  SYNOPSIS
-  !*    Usage: finddiagprecon(store_km_pp_OF_,store_mm_pp_OF_,      &
+  !*    Usage: find_diag_precon(store_km_pp_OF_,store_mm_pp_OF_,    &
   !*                            numSchemes_,diag_precon_pp_OF_);
   !*
   !*  FUNCTION
@@ -246,7 +245,7 @@
   !*    * REST must be rearranged before function call
   !*
   !*  TODO
-  !*    * Remove need for global coordinate matrix
+  !*    Only implemented for 8noded hexahedral elements  
   !*
   !*  AUTHOR
   !*    S. Hewitt
@@ -255,7 +254,7 @@
   !*
   !*/
 
-  USE mpi_wrapper  !remove comment for serial compilation
+  USE mpi_wrapper  
   USE precision;   USE global_variables; USE mp_interface;
   USE input;       USE output;           USE loading;
   USE timing;      USE maths;            USE gather_scatter;
@@ -316,8 +315,9 @@ END SUBROUTINE gravity_loads
   !--------------------------------------------------------------------
   !--------------------------------------------------------------------
   !--------------------------------------------------------------------
-  SUBROUTINE WRITE_LARGESTRAIN(job_name,nn,nr,loaded_nodes,timest,nr_timest,inewton,nr_iters)
-  !/****f* parafemnl/write_largestrain
+  SUBROUTINE write_largestrain(job_name,nn,nr,loaded_nodes,timest,  &
+                               nr_timest,inewton,nr_iters)
+  !/****f* utils/write_largestrain
   !*  NAME
   !*    SUBROUTINE: write_largestrain
   !*
@@ -441,14 +441,14 @@ END SUBROUTINE gravity_loads
 
   RETURN
 
-  END SUBROUTINE WRITE_LARGESTRAIN
+  END SUBROUTINE write_largestrain 
 
   !--------------------------------------------------------------------
   !--------------------------------------------------------------------
   !--------------------------------------------------------------------
 
-  SUBROUTINE WRITE_SMALLSTRAIN(job_name,timest,iters)
-  !/****f* parafemnl/write_smallstrain
+  SUBROUTINE write_smallstrain(job_name,timest,iters)
+  !/****f* utils/write_smallstrain
   !*  NAME
   !*    SUBROUTINE: write_smallstrain
   !*
@@ -533,7 +533,7 @@ END SUBROUTINE gravity_loads
 
   RETURN
 
-  END SUBROUTINE WRITE_SMALLSTRAIN
+  END SUBROUTINE write_smallstrain 
 
   !--------------------------------------------------------------------
   !--------------------------------------------------------------------

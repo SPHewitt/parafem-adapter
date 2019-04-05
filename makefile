@@ -27,8 +27,8 @@ EXE=parafem
 
 SRC= \
 	$(SRCDIR)/SolverInterfaceF2003.f90 \
-    $(SRCDIR)/parafemutils.f90 \
-    $(SRCDIR)/parafemnl.f90 \
+    $(SRCDIR)/utils.f90 \
+    $(SRCDIR)/run_nonlinear.f90 \
     $(SRCDIR)/input_precice.f90 \
     $(SRCDIR)/parafem.f90
 

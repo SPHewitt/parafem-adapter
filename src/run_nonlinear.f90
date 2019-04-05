@@ -1,8 +1,8 @@
 SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
                   g_g_pp,g_num_pp,g_coord_pp,flag,disp,nn)
-  !/****f* parafemnl/runnl
+  !/****f* run_nonlinear/runnl
   !*  NAME
-  !*    SUBROUTINE: runl
+  !*    SUBROUTINE: runnl
   !*
   !*  SYNOPSIS
   !*    Usage:     runnl_(forceNodes_,fext_OF_,numSchemes_,solidProps_,
@@ -18,7 +18,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
   !*        {F} = [M]{a} + [C]{u} + [K]{d}
   !*
   !*    The new displacement, velocity and acceleration fields are
-  !*    output. Note this subroutine is used for problems with infinte strain.
+  !*    output. Note this subroutine is used for problems with finte strain.
   !*
   !*  INPUTS
   !*    val         (ndim,loaded_nodes)	 - Force vector of loaded nodes
@@ -623,7 +623,7 @@ SUBROUTINE runnl(node,val,num_var,mat_prop,nr,loaded_nodes,timeStep, &
 
     END DO iterations
 
-   IF(numpe .EQ. 1)WRITE(*,'(a,I3,a,ES10.3)')," Newton-Raphson Iters: ",inewton,&
+   IF(numpe .EQ. 1)WRITE(*,'(a,I3,a,ES10.3)')" Newton-Raphson Iters: ",inewton,&
                                         ",  Final residual: ", (energy/energy1)
 
    nr_timest(inewton,7)= elap_time()-timest(14)
