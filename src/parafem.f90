@@ -34,7 +34,7 @@ PROGRAM main
   INTEGER                  :: iel,nip,npes_pp,partitioner,ndof
   INTEGER                  :: i,j,limit,loaded_nodes,meshgen
   INTEGER                  :: ndim,nels,nn,nod,nodof,npri,nr,nres
-  INTEGER                  :: nlen,flag,count
+  INTEGER                  :: nlen,flag,count,int_var(2)
 
   INTEGER,ALLOCATABLE      :: g_g_pp(:,:), rest(:,:),g_num_pp(:,:)
 
@@ -42,7 +42,7 @@ PROGRAM main
 
   REAL(iwp)                :: e,v,alpha1,beta1,rho
   REAL(iwp)                :: beta,delta,tol_pcg,tol_nr
-  REAL(iwp)                :: mat_prop(3),num_var(8)
+  REAL(iwp)                :: mat_prop(3),real_var(6)
 
   REAL(iwp),ALLOCATABLE    :: g_coord_pp(:,:,:)
 
@@ -74,14 +74,14 @@ PROGRAM main
   CALL READ_XX24(argv,numpe,alpha1,beta1,e,element,beta,delta,       &
                        limit,loaded_nodes,meshgen,nels,nip,nn,nod,dt,     &
                        npri,nr,nres,partitioner,rho,tol_pcg,tol_nr,v)
-   num_var(1)=beta
-   num_var(2)=delta
-   num_var(3)=alpha1
-   num_var(4)=beta1
-   num_var(5)=tol_pcg
-   num_var(6)=tol_nr
-   num_var(7)=limit
-   num_var(8)=npri
+   real_var(1)=beta
+   real_var(2)=delta
+   real_var(3)=alpha1
+   real_var(4)=beta1
+   real_var(5)=tol_pcg
+   real_var(6)=tol_nr
+   int_var(1)=limit
+   int_var(2)=npri
 
    mat_prop(1)=e
    mat_prop(2)=v
@@ -244,10 +244,13 @@ PROGRAM main
 
     ! if bool == 0 Advance in time otherwise
 
-    !CALL runl(nodes,forces,num_var,mat_prop,nr,loaded_nodes,dt, &
+    !CALL runl(nodes,forces,real_var,int_var,mat_prop,nr,loaded_nodes,dt, &
     !           g_g_pp,g_num_pp,g_coord_pp,flag,displacements)
 
-    CALL runnl(local_nodes,forces,num_var,mat_prop,nr,localVertexSize,dt, &
+    !CALL runnl(local_nodes,forces,real_var,int_var,mat_prop,nr,localVertexSize,dt, &
+    !           g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn)
+    
+    CALL runnl_bd(local_nodes,forces,real_var,int_var,mat_prop,nr,localVertexSize,dt, &
                g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn)
 
     CALL precicef_write_bvdata(displID,localVertexSize,vertexIDs,displacements)

@@ -1,23 +1,23 @@
-SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
+SUBROUTINE runnl_bd(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
                   g_g_pp,g_num_pp,g_coord_pp,flag,disp,nn)
-  !/****f* run_nonlinear/runnl
+  !/****f* run_nonlinear/runnl_bd
   !*  NAME
-  !*    SUBROUTINE: runnl
+  !*    SUBROUTINE: runnl_bd
   !*
   !*  SYNOPSIS
-  !*    Usage:     runnl_(local_nodes,forces,real_var,int_var,mat_prop,nr,     &
+  !*    Usage:     runnl_bd(local_nodes,forces,real_var,int_var,mat_prop,nr,   &
   !*                      localVertexSize,dt,g_g_pp,g_num_pp,g_coord_pp,bool,  &
   !*                      displacements,nn);
   !*
   !*  FUNCTION
-  !*    Reads in the current timesteps displacement, velocity,
-  !*    acceleration and external force field. Loads the structure
-  !*    and solves the governing equations of the problem
+  !*    Reads in the current timesteps displacement and external force field. 
+  !*    Loads the structure and solves the governing equations of the problem
   !*
-  !*        {F} = [M]{a} + [C]{u} + [K]{d}
+  !*    Backward difference scheme:
   !*
-  !*    The new displacement, velocity and acceleration fields are
-  !*    output. Note this subroutine is used for problems with finte strain.
+  !*    Liu TY, Li Q Bin, Zhao C Bin. An efficient time-integration method for
+  !*    nonlinear dynamic analysis of solids and structures.
+  !*    Sci China Physics, Mech Astron. 2013;56(4):798–804.
   !*
   !*  INPUTS
   !*    val         (ndim,loaded_nodes)	 - Force vector of loaded nodes
@@ -33,11 +33,6 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
   !*    g_g_pp      (ntot,nels_pp)       - Distributed equation steering array
   !*    g_num_pp    (nod,nels_pp)        - Distributed element steering array
   !*    g_coord_pp  (nod,nels_pp)        - Distributed nodal coordinates
-  !*    store_km_pp (ntot,ntot,nels_pp)  - Distributed stiffness matrix [k]
-  !*    store_mm_pp (ntot,ntot,nels_pp)  - Distributed mass matrix [M]
-  !*
-  !*    diag_precon_pp (neq_pp)          - Distributed diagonal preconditioner
-  !*    gravlo_pp      (neq_pp)          - Vector of gravity loads
   !*
   !*  OUTPUT
   !*    Dfield  (ntot,nels_pp)           - Distributed nodal displacements
@@ -93,7 +88,7 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
   REAL(iwp)                 :: ray_a,ray_b
   REAL(iwp)                 :: e,v,rho,det,tol, maxdiff, tol2, detF
   REAL(iwp)                 :: energy, energy1, rn0
-  REAL(iwp)                 :: a0,a1,a2,a3,a4,a5,a6,a7
+  REAL(iwp)                 :: a0,a1,a3
   REAL(iwp)                 :: dtim,beta,delta
 
   REAL(iwp)                 :: xi,eta,zeta,etam,xim,zetam,etap,xip,zetap
@@ -481,27 +476,16 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
       nr_timest(inewton,3)= timest(11)-timest(10)
 
 !-------------------------------------------------------------------------
-! 9. Newmark Scheme
+! 9. Backward difference scheme
 !-------------------------------------------------------------------------
-
-    ! New mark parameters
-    ! Finite element procedures in engineering analysis, K‐J. Bathe, Prentice‐Hall, 1982, doi:10.1002/nag.1610070412
-    ! Pages 511-513
-
-     a0  = 1.0/(beta*(dtim**2.0))
-     a1  = delta/(beta*dtim)
-     a2  = 1.0/(beta*dtim)
-     a3  = (1.0/( 2.0*beta)) -1.0
-     a4  = (delta/beta) - 1.0
-     a5  = (dtim/2.0)*((delta/beta)-2.0)
-     a6  = dtim*(1.0-delta)
-     a7  = delta*dtim
+     a0  = (dtim*dtim)/(2.0)
+     a1  = (dtim)/(2.0)
 
      ! M_eff
      meff_pp = zero
-     meff_pp(1:) = a0*(x0_pp(1:)-xnew_pp(1:)) + a2*d1x0_pp(1:) +a3*d2x0_pp(1:)
+     meff_pp(1:) = x0_pp(1:)-xnew_pp(1:) + dtim*d1x0_pp(1:)
 
-     temp_pp    =  zero
+     temp_pp =  zero
      temp_pp = storemm_pp
      pmul_pp = zero
 
@@ -516,31 +500,31 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
      vu_pp = zero
      CALL SCATTER(vu_pp(1:),utemp_pp)
 
-      !C_eff
-     ceff_pp = zero
-     ceff_pp(1:) = a1*(x0_pp(1:)-xnew_pp(1:)) + a4*d1x0_pp(1:) + a5*d2x0_pp(1:)
+     !C_eff
+     !ceff_pp = zero
+     !ceff_pp(1:) = a1*(x0_pp(1:)-xnew_pp(1:)) + a4*d1x0_pp(1:) + a5*d2x0_pp(1:)
 
-     temp_pp  =  zero
-     temp_pp  =  storecm_pp
-     pmul_pp = zero
+     !temp_pp  =  zero
+     !temp_pp  =  storecm_pp
+     !pmul_pp = zero
 
      ! C*C_eff
-     CALL GATHER(ceff_pp(1:),pmul_pp) ; utemp_pp=zero
+     !CALL GATHER(ceff_pp(1:),pmul_pp) ; utemp_pp=zero
 
-     DO iel=1,nels_pp
-       CALL DGEMV('N',ntot,ntot,one,temp_pp(:,:,iel),ntot,                 &
-                pmul_pp(:,iel),1,zero,utemp_pp(:,iel),1)
-     END DO
+     !DO iel=1,nels_pp
+     !  CALL DGEMV('N',ntot,ntot,one,temp_pp(:,:,iel),ntot,                 &
+     !           pmul_pp(:,iel),1,zero,utemp_pp(:,iel),1)
+     !END DO
 
-     xu_pp = zero
-     CALL SCATTER(xu_pp(1:),utemp_pp)
+     !xu_pp = zero
+     !CALL SCATTER(xu_pp(1:),utemp_pp)
 
 !-------------------------------------------------------------------------
 ! 10. Get residual
 !-------------------------------------------------------------------------
 
      ! {r_pp}
-     r_pp(1:) = fext_pp(1:) - fint_pp(1:) + vu_pp(1:) + xu_pp(1:)
+     r_pp(1:) = a0*(fext_pp(1:) - fint_pp(1:)) + vu_pp(1:)
 
      ! Compute maxdiff of residual
      maxdiff =  MAXABSVAL_P(r_pp(1:))
@@ -551,7 +535,7 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
      END IF
 
      ! [k]
-     storekm_pp = storekm_pp + a0*storemm_pp + a1*storecm_pp
+     storekm_pp =  a0*storekm_pp  + a1*storecm_pp + storemm_pp
 
      timest(12)     =  elap_time()
      nr_timest(inewton,4)= timest(12)-timest(11)
@@ -634,14 +618,18 @@ SUBROUTINE runnl(node,val,real_var,int_var,mat_prop,nr,loaded_nodes,timeStep, &
 ! 13. Update Velocity and Acceleration
 !-------------------------------------------------------------------------
 
+   a0  = (dtim*dtim)/(2.0)
+   a1  = (dtim)/(2.0)
+   a3  = (2.0)/(dtim*dtim)
+
    timest(15)     =  elap_time()
 
    x1_pp=zero; d2x1_ppstar= zero; d1x1_pp= zero; d2x1_pp=zero;
 
-   x1_pp(1:)       = xnew_pp(1:)
+   x1_pp(1:) = xnew_pp(1:)
 
-   d2x1_ppstar(1:) = a0*(x1_pp(1:)-x0_pp(1:)) - a2*d1x0_pp(1:) - a3 * d2x0_pp(1:)
-   d1x1_pp(1:)     = d1x0_pp(1:) + a6*d2x0_pp(1:) + a7*d2x1_ppstar(1:)
+   d2x1_ppstar(1:) = a3*(x1_pp(1:)-x0_pp(1:) - dtim*d1x0_pp(1:))
+   d1x1_pp(1:)     = d1x0_pp(1:) + a1*(d2x0_pp(1:) + d2x1_ppstar(1:))
    d2x1_pp(1:)     = d2x1_ppstar(1:)
 
    ! Update initial data
