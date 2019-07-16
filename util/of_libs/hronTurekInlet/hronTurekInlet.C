@@ -146,6 +146,7 @@ void Foam::hronTurekInlet::write(Ostream& os) const
     os.writeKeyword("maxValue") <<  maxValue_ << token::END_STATEMENT << nl;
     os.writeKeyword("n") <<  n_ << token::END_STATEMENT << nl;
     os.writeKeyword("y") <<  y_ << token::END_STATEMENT << nl;
+    os.writeKeyword("rampTime") <<  rampTime_ << token::END_STATEMENT << nl;
     writeEntry("value", os);
 }
 
