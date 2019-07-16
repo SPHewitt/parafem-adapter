@@ -3,7 +3,7 @@ import numpy as np
 
 
 if __name__ == '__main__':
-    print("\n ---- Plotting forces ----\n")
+    print("\n ---- Plotting Displacements ----\n")
 
     # File name
     filename='precice-ParaFEM-watchpoint-point1.log'
