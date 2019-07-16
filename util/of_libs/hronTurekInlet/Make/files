@@ -1,0 +1,4 @@
+
+hronTurekInlet.C
+
+LIB = $(FOAM_USER_LIBBIN)/libhronTurekInlet
