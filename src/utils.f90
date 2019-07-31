@@ -220,22 +220,17 @@
   !*    SUBROUTINE: gloads
   !*
   !*  SYNOPSIS
-  !*    Usage: gloads_(gravlo_,&specWeight,&gPoints_,&nodof,&nod,&ndim,
-  !*                   &numRestrNodes_, mPoints_,g_num_pp_OF_,rest_);
+  !*    Usage: gravity_loads(gravlo_pp,specWeight,nodof,nod,ndim,g_coord_pp);
   !*
   !*  FUNCTION
   !*    Supplies a gravitational force vector
   !*
   !*  INPUTS
   !*    specWeight   - Specific Weight (density  * gravitaional loading)
-  !*    nn           - Total number of nodes in mesh
   !*    nodof        - Number of degrees of freedom per node
   !*    nod          - Number of Nodes per Element
   !*    ndim         - Number of dimensions
-  !*    nr           - Number of restrained nodes
-  !*
-  !*    g_num_pp (nod,nels_pp)  - Element Steering matrix
-  !*    rest     (nr,nodof+1)   - Matrix of restrained nodes
+  !*    g_coord_pp   - Coordinates per processor
   !*
   !*  OUTPUT
   !*    gravlo_pp   (neq_pp)     - Vector of loads
@@ -271,7 +266,7 @@
   REAL(iwp)               :: det
   REAL(iwp)               :: pmul_pp(ntot,nels_pp)
 
-  REAL(iwp),INTENT(IN)    :: specWeight,g_coord_pp(nod,ndim,nels_pp)
+  REAL(iwp),INTENT(IN)    :: specWeight(3),g_coord_pp(nod,ndim,nels_pp)
 
   REAL(iwp),INTENT(INOUT) :: gravlo_pp(neq_pp)
 
@@ -299,11 +294,14 @@
       jac=MATMUL(der,g_coord_pp(:,:,iel))
       det=determinant(jac)
       CALL shape_fun(fun,points,i)
+      pmul_pp(1:ndof-2:3,iel)=pmul_pp(1:ndof-2:3,iel)+fun(:)*det*weights(i)
       pmul_pp(2:ndof-1:3,iel)=pmul_pp(2:ndof-1:3,iel)+fun(:)*det*weights(i)
+      pmul_pp(3:ndof-0:3,iel)=pmul_pp(3:ndof-0:3,iel)+fun(:)*det*weights(i)
     END DO gauss_points_1
 
-    ! Sign included here to donate negative Y
-    pmul_pp(:,iel)=-pmul_pp(:,iel)*specWeight
+    pmul_pp(1:ndof-2:3,iel)=pmul_pp(1:ndof-2:3,iel)*specWeight(1)
+    pmul_pp(2:ndof-1:3,iel)=pmul_pp(2:ndof-1:3,iel)*specWeight(2)
+    pmul_pp(3:ndof-0:3,iel)=pmul_pp(3:ndof-0:3,iel)*specWeight(3)
   END DO elements_1
 
   gravlo_pp = zero
