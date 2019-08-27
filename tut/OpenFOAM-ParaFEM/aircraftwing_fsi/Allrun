@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Set verbose output
+set -x
+
+# Run from current directory
+cd ${0%/*} || exit 1
+
+# Source openfoam run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+
+# Fluid
+# Create fluid mesh
+blockMesh -case Fluid > log.blockMesh 2>&1
+snappyHexMesh -case Fluid -overwrite > log.snappyHexMesh 2>&1 
+checkMesh -case Fluid > log.checkMesh 2>&1 
+

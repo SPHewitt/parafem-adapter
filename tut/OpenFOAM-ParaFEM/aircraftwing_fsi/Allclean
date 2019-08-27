@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# Run from this directory
+cd ${0%/*} || exit 1    
+
+echo "Cleaning..."
+
+# Source tutorial clean functions
+. $WM_PROJECT_DIR/bin/tools/CleanFunctions
+
+cd Fluid 
+    # Clean the case
+    cleanCase
+
+cd ..
+# Remove the log files
+rm -fv log.blockMesh
+rm -fv log.snappyHexMesh
+rm -fv log.checkMesh
+
+echo "Cleaning complete!"
+#------------------------------------------------------------------------------
