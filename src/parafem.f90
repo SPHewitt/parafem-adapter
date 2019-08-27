@@ -145,8 +145,8 @@ PROGRAM main
   !       It doesnt currently pose a bottle neck as it occurs only once but
   !       memory issues could become a factor on bigger problems.
 
-  ! Read in wetted surface, (xx23.lds)
-  fname = argv(1:INDEX(argv," ")-1) // ".lds"
+  ! Read in wetted surface, (xx24.int)
+  fname = argv(1:INDEX(argv," ")-1) // ".int"
   vertexSize = loaded_nodes
 
   ALLOCATE(vertex(dimensions))
@@ -244,14 +244,15 @@ PROGRAM main
 
     ! if bool == 0 Advance in time otherwise
 
-    !CALL runl(nodes,forces,real_var,int_var,mat_prop,nr,loaded_nodes,dt, &
-    !           g_g_pp,g_num_pp,g_coord_pp,flag,displacements)
+    ! Hard coded for 2D problems
+    forces=forces/2
 
-    !CALL runnl(local_nodes,forces,real_var,int_var,mat_prop,nr,localVertexSize,dt, &
-    !           g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn)
-    
+    ! runnl    - St Venant-Kirchoff mat. solved with Newmark scheme 
+    ! runnl_bd - St Venant-Kirchoff mat. solved with backward difference
+    !            scheme.
+
     CALL runnl_bd(local_nodes,forces,real_var,int_var,mat_prop,nr,localVertexSize,dt, &
-               g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn)
+               g_g_pp,g_num_pp,g_coord_pp,bool,displacements,nn) 
 
     CALL precicef_write_bvdata(displID,localVertexSize,vertexIDs,displacements)
 
