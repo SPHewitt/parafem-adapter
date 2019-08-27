@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# --------------------------------------------------------------------
+# Script to build and install the parafem-adapter
+# --------------------------------------------------------------------
+
+# use the following command to build the adapter
+# ./make_adapter MACHINE=machinename > make.log 2>&1 
+
+# TODO:
+#   * Script assumes parafem has been installed correctly
+#   * tidy up make file
+
+# Default
+DO_CLEAN=0
+DO_RELEASE=1
+DO_DEBUG=0
+
+
+while [ $# -gt 0 ]; do
+        ARG=`echo $1 | tr "[:upper:]" "[:lower:]"`
+        case $ARG in
+        clean) DO_CLEAN=1; DO_RELEASE=0; DO_DEBUG=0;;
+        release) DO_CLEAN=0; DO_RELEASE=1; DO_DEBUG=0;;
+        debug) DO_CLEAN=0; DO_RELEASE=0; DO_DEBUG=1;;
+        machine=*) MACHINE=`echo $ARG | sed -e 's/machine=//g'`;;
+        esac
+        shift
+done
+
+if [ -z "$MACHINE" ] ; then
+        echo "\n***********************************************"
+        echo "ERROR: MACHINE not set!"
+        echo "***********************************************\n"
+        exit 2
+else
+        export MACHINE=`echo $MACHINE | tr "[:upper:]" "[:lower:]"`
+fi
+
+echo "\nBuilding parafem-adpater for: $MACHINE\n"
+
+export MK_DEFS=build/"$MACHINE".inc
+if ! [ -f $MK_DEFS ] ; then
+        echo "\n****************************************************"
+        echo "ERROR: Machine include file $MK_DEFS does not exist"
+        echo "******************************************************\n"
+        exit 2
+fi
+
+# Make adapter
+if [ $DO_CLEAN -gt 0 ]; then
+    cd src && make clean
+fi
+
+if [ $DO_RELEASE -gt 0 ]; then
+    cd src && make release
+fi
+
+if [ $DO_DEBUG -gt 0 ]; then
+    cd src && make debug 
+fi

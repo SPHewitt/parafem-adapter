@@ -1,16 +1,18 @@
 # -----------------
 # Compiler
 # -----------------
-FC=mpif90
-FCFLAGS=-Wall -g 
+#FC=mpif90
+#FCFLAGS=-Wall -g 
+include ../build/$(MACHINE).inc
+
 
 # -----------------
 # Directories
 # -----------------
-SRCDIR=src
-OBJDIR=obj
-MODDIR=mod
-BINDIR=bin
+SRCDIR=../src
+OBJDIR=../obj
+MODDIR=../mod
+BINDIR=../bin
 
 # -----------------
 # Libraries
@@ -29,15 +31,25 @@ SRC= \
 	$(SRCDIR)/SolverInterfaceF2003.f90 \
     $(SRCDIR)/utils.f90 \
     $(SRCDIR)/run_nonlinear.f90 \
+	$(SRCDIR)/run_nonlinear_bd.f90 \
     $(SRCDIR)/input_precice.f90 \
     $(SRCDIR)/parafem.f90
+
 
 OBJ:=$(SRC:$(SRCDIR)%.f90=$(OBJDIR)%.o)
 
 # -----------------
 # Rules
 # -----------------
-all: check-env
+#
+all: check-env release
+
+release: check-env
+	@echo $(SRC)
+	@echo $(OBJ)
+	$(MAKE) $(EXE) 
+
+debug: check-env
 	@echo $(SRC)
 	@echo $(OBJ)
 	$(MAKE) $(EXE) 
@@ -59,11 +71,8 @@ endif
 .PHONY: clean
 clean:
 	@echo cleaning
-	rm -rf obj/*.o
-	rm -rf bin/*
-	rm -rf mod/*
-	rm -rf *.log
+	rm -rf ../obj/*.o
+	rm -rf ../bin/*
+	rm -rf ../mod/*
+	rm -rf ../*.log
 
-.PHONY: test
-test:
-	./bin/parafem precice-config.xml SolverTwo MeshTwo 
