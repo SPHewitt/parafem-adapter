@@ -1,0 +1,17 @@
+# ignore object files
+*.o
+
+# ignore module files
+*.mod
+
+# ignore silent files
+.*
+
+#ignore log files
+*.log
+
+# ignore tutorials
+tut/*
+
+# ignore executables
+bin/*

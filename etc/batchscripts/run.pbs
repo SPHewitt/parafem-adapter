@@ -1,0 +1,39 @@
+#!/bin/bash --login
+
+#PBS -N test_ht_precice
+#PBS -l select=2
+#PBS -l walltime=12:00:00
+
+#PBS -A e601
+
+module swap PrgEnv-cray PrgEnv-gnu
+module load openfoam/v6
+source /work/y07/y07/cse/openfoam/v6/build64/OpenFOAM-6/etc/bashrc
+
+export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)               
+cd $PBS_O_WORKDIR
+export OMP_NUM_THREADS=1
+
+# Attempting to run in serial first
+#ln -s -f precice-config_serial.xml precice-config.xml
+ln -s -f precice-config_parallel.xml precice-config.xml
+
+#cp -r Fluid/0.orig/ Fluid/0/
+#aprun -n 1 blockMesh -case Fluid
+#aprun -n 1 checkMesh -case Fluid
+
+#cd Solid
+#  aprun -n 1 ./makeMesh.sh > log.makeMesh 2>&1 &
+#cd -
+
+ip link show > log.link
+
+#aprun -n 1 -N 1 pimpleFoam -case Fluid > log.pimpleFoam 2>&1 &
+#aprun -n 1 -N 1 ../../../bin/parafem Solid/xx24 precice-config.xml ParaFEM ParaFEM_Mesh > log.parafem 2>&1 &
+
+aprun -n 6 -N 6 pimpleFoam -parallel -case Fluid > log.pimpleFoam 2>&1 &
+aprun -n 2 -N 2 ../../../bin/parafem Solid/xx24 precice-config.xml ParaFEM ParaFEM_Mesh > log.parafem 2>&1 &
+
+wait 
+exit 0
+

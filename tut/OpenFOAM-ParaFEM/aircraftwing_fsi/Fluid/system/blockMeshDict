@@ -17,21 +17,49 @@ FoamFile
 
 convertToMeters 1;
 
+// USER VALUES
+// reference length
+D 1.0;
+
+// distances*D
+upstream 4.0; 
+downstream 10;
+crossstream 3.0;
+height 5.0;
+
+//  CALCULATED VALUES
+negx #calc "$upstream * -1.0 * $D";
+posx #calc "$downstream * 1.0 * $D";
+
+negz #calc "$crossstream * -1.0 * $D";
+posz #calc "$crossstream * 1.0 * $D";
+
+top #calc "$height * 1.0";
+bottom #calc "-5.0* $D";
+
 vertices
 (
-    (-1.2 -2.2 -0.1)
-    ( 5   -2.2 -0.1)
-    ( 5    2.2 -0.1)
-    (-1.2  2.2 -0.1)
-    (-1.2 -2.2  0.1)
-    ( 5   -2.2  0.1)
-    ( 5    2.2  0.1)
-    (-1.2  2.2  0.1)
+    ($negx  $bottom   $negz)
+    ($posx  $bottom  $negz)
+    ($posx  $top  $negz)
+    ($negx  $top  $negz)
+    ($negx  $bottom   $posz)
+    ($posx  $bottom  $posz)
+    ($posx  $top  $posz)
+    ($negx  $top  $posz)
 );
+
+
+// uniform grid
+division #calc "$D/5.0";
+xcells #calc "int(std::floor(($upstream+$downstream)/$division))";
+ycells #calc "int(std::floor($top/$division))";
+zcells #calc "int(std::floor(($crossstream+$crossstream)/$division))";
+
 
 blocks
 (
-    hex (0 1 2 3 4 5 6 7) (36 24 1) simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) ($xcells $ycells $zcells) simpleGrading (1 1 1)
 );
 
 edges

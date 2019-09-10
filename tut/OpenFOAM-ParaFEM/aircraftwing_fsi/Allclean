@@ -11,8 +11,20 @@ echo "Cleaning..."
 cd Fluid 
     # Clean the case
     cleanCase
-
 cd ..
+
+cd Solid
+    # Clean the case files
+    rm -vf *.bnd
+    rm -vf *.d
+    rm -vf *.dat
+    rm -vf *.lds
+    rm -vf *.int
+    rm -vf *.fix
+    rm -vf *.nset
+    rm -vf *.ensi.*
+cd ..
+
 # Remove the log files
 rm -fv log.blockMesh
 rm -fv log.snappyHexMesh

@@ -31,7 +31,8 @@ geometry
     wing
     {
         type    triSurfaceMesh;
-        file    "wing_5degrees.obj";
+        //file    "wing_5degrees.obj";
+        file    "airfoil.obj";
     }
 
     refinementBox
@@ -138,7 +139,7 @@ castellatedMeshControls
     // section reachable from the locationInMesh is kept.
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
-    locationInMesh (-0.5 0 0);
+    locationInMesh (-2.0 0 2.0);
 
 
     // Whether any faceZones (as specified in the refinementSurfaces)
