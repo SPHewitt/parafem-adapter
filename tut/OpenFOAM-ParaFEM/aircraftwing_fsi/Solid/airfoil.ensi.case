@@ -1,0 +1,15 @@
+#
+# ParaFEM pf2ensi generated post-process file
+# Ensight Gold Format
+#
+# Problem name:	airfoil
+#
+FORMAT
+type:	ensight gold
+GEOMETRY
+model:	1	airfoil.ensi.geo
+VARIABLE
+vector per node:		Fixed_Displacement	airfoil.ensi.NDFIX
+scalar per node:		Bound_Nodes	airfoil.ensi.NDBND
+vector per node:		Loaded_Nodes	airfoil.ensi.NDLDS
+scalar per element:		Material	airfoil.ensi.MATID

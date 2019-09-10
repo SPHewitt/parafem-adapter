@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -x
+
+./inp2pf airfoil.inp
+
+./nset2int.py -i airfoil -n interface
+
+#./transform.py -i airfoil
+
+./pf2ensi airfoil
