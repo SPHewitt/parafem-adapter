@@ -68,7 +68,7 @@ MODULE INPUT_PRECICE
   !*  CREATION DATE
   !*
   !*  COPYRIGHT
-  !*    (c) University of Manchester 2010-13
+  !*    (c) University of Manchester 2015-19
   !******
   !*  Place remarks that should not be included in the documentation here.
   !*  Need to add some error traps

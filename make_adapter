@@ -16,6 +16,14 @@ DO_CLEAN=0
 DO_RELEASE=1
 DO_DEBUG=0
 
+# make bin and mod directories
+if [ ! -d "bin" ]; then
+    mkdir -p bin
+fi
+
+if [ ! -d "mod" ]; then
+    mkdir -p mod 
+fi
 
 while [ $# -gt 0 ]; do
         ARG=`echo $1 | tr "[:upper:]" "[:lower:]"`

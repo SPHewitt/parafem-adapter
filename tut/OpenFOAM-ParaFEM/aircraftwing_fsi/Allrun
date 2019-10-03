@@ -9,10 +9,37 @@ cd ${0%/*} || exit 1
 # Source openfoam run functions
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 
-
 # Fluid
 # Create fluid mesh
-blockMesh -case Fluid > log.blockMesh 2>&1
-snappyHexMesh -case Fluid -overwrite > log.snappyHexMesh 2>&1 
-checkMesh -case Fluid > log.checkMesh 2>&1 
+#blockMesh -case Fluid > log.blockMesh 2>&1
+#snappyHexMesh -case Fluid -overwrite > log.snappyHexMesh 2>&1 
+#checkMesh -case Fluid > log.checkMesh 2>&1 
+#cp -r Fluid/0.orig Fluid/0
 
+# Solid
+# Create solid mesh
+#cd Solid
+#./makeMesh
+#cd ..
+
+# Run the case
+
+pimpleFoam -case Fluid > Fluid.log 2>&1 &
+PIDParticipant1=$!
+
+../../../bin/parafem Solid/airfoil precice-config.xml ParaFEM ParaFEM_Mesh> Solid.log 2>&1 &
+PIDParticipant2=$!
+
+# Wait for all the participants to finish
+echo "Waiting for the participants to exit..."
+echo "(you may run 'tail -f ${Participant1}.log' in another terminal to check the progress)"
+wait ${PIDParticipant1}
+wait ${PIDParticipant2}
+
+if [ $? -ne 0 ] || [ "$(grep -c -E "error:" ${Participant1}.log)" -ne 0 ] || [ "$(grep -c -E "error:" ${Participant2}.log)" -ne 0 ]; then
+    echo ""
+    echo "Something went wrong... See the log files for more."
+else
+    echo ""
+    echo "The simulation completed!"
+fi

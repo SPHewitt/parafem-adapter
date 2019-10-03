@@ -98,7 +98,7 @@ boundary
 
     symFront
     {
-        type symmetryPlane;
+        type patch;
         faces
         (
             (4 5 6 7)
@@ -107,7 +107,7 @@ boundary
 
     symBack
     {
-        type symmetryPlane;
+        type patch;
         faces
         (
             (0 3 2 1)

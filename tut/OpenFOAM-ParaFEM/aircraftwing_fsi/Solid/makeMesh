@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
 
-set -x
+set -v
 
+# Create parafem file from Abaqus inp
 ./inp2pf airfoil.inp
 
+# Create .int file from named set
 ./nset2int.py -i airfoil -n interface
 
-#./transform.py -i airfoil
+# Transform coordinates in .d file
+# Within Abaqus student version, models meshes
+# cannot be transformed so this step is required to
+# rotate and translate the geometery.
+./transform.py -i airfoil
 
+# Create the data file
+# WARNING: this dat.temp file is created manually
+# if the geometry or mesh is changed this file needs 
+# to be updated.
+cp dat.temp airfoil.dat
+
+# Create ensi files for viewing in ParaView
 ./pf2ensi airfoil

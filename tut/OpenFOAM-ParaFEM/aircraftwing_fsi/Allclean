@@ -29,6 +29,10 @@ cd ..
 rm -fv log.blockMesh
 rm -fv log.snappyHexMesh
 rm -fv log.checkMesh
+rm -fv *.log
+rm -fv *.json
+rm -fv fort.90
+rm -fv xx24.run
 
 echo "Cleaning complete!"
 #------------------------------------------------------------------------------

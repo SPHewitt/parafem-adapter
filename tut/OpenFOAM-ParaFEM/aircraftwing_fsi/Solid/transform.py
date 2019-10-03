@@ -108,12 +108,27 @@ if __name__ == "__main__":
 
     print("  Error checks have been passed, transforming coordinates\n")
 
+    ##################################################
+    ######### TRANSFORMATION MATRICIES ###############
+    ##################################################
     # Tranformation matrix
     cos90 = np.cos(np.pi/2.0)
     sin90 = np.sin(np.pi/2.0)
+
+    cosn90 = np.cos(-np.pi / 2.0)
+    sinn90 = np.sin(-np.pi / 2.0)
+
     
-    # Rotation about X
+    # Rotation +90 deg about X
     rx = np.array([[1, 0, 0], [0, cos90, -sin90], [0, sin90, cos90]])
+
+    # Rotation -90 deg about x
+    negrx = np.array([[1, 0, 0], [0, cosn90, -sinn90], [0, sinn90, cosn90]])
+
+    # Translation negative Y
+    ytrans = 5
+
+    ##################################################
    
     # Read d file line by line
     data = list()
@@ -135,17 +150,30 @@ if __name__ == "__main__":
         if (nodeFlag == True) and (data[i] != ['*NODES']):
             # Create temporary vector from data
             tmp = [float(data[i][1]),  float(data[i][2]), float(data[i][3])]
-            tmp = np.matmul(rx, tmp)
+            tmp = np.matmul(negrx, tmp)
+            tmp[1] = tmp[1] - ytrans
+
             data[i][1] = str(tmp[0])
             data[i][2] = str(tmp[1])
             data[i][3] = str(tmp[2])
 
     # rewrite dfile
+    # Note: the writing is quite susceptible to bugs
+    # for example: there must be no spaces before node coordiantes
+    #              there must be two spaces before element numbering
     file = open(dfile, "w+")
     for i in range(len(data)):
         string = str()
-        for j in range(len(data[i])):
-            string = string + ' ' + data[i][j]
+        if len(data[i]) == 1:
+            string=data[i][0]
+        elif len(data[i]) > 1 and len(data[i]) < 5:
+            string = data[i][0] + ' ' + data[i][1] + ' ' + data[i][2] + ' ' + data[i][3]
+        elif len(data[i]) > 5:
+            for j in range(len(data[i])):
+                string = string + ' ' + data[i][j]
+            string = ' ' + string
+        else:
+            print("Error: Line has no length")
         file.write(string+'\n')
     file.close()
 

@@ -59,20 +59,12 @@ PIMPLE
     pisoTol 1e-6;
     consistent  true;
 
-    nOuterCorrectors 50;
+    nOuterCorrectors 3;
 
     residualControl
     {
-	    U
-    	{
-    		tolerance 5e-5;
-    		relTol	  0;
-    	}
-	    p
-    	{
-    		tolerance 5e-4;
-    		relTol	  0;
-    	}
+	    U   5e-5;
+	    p   5e-4;
     }
 }
 
